@@ -35,11 +35,11 @@ jobs:
 
       - name: Build Desktop Packages (Linux)
         if: runner.os == 'Linux'
-        run: ./gradlew :desktopApp:packageDeb :desktopApp:packageRpm :desktopApp:packageAppImage --no-daemon
+        run: ./gradlew :desktopApp:packageDeb :desktopApp:packageRpm --no-daemon
 
       - name: Build Desktop Packages (Windows)
         if: runner.os == 'Windows'
-        run: ./gradlew :desktopApp:packageExe :desktopApp:packageMsi --no-daemon
+        run: ./gradlew :desktopApp:packageExe :desktopApp:packageMsi :desktopApp:packageAppImage --no-daemon
 
       - name: Stop Gradle Daemon
         run: ./gradlew --stop

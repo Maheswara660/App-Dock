@@ -53,8 +53,7 @@ jobs:
           path: |
             desktopApp/build/compose/binaries/main/deb/*.deb
             desktopApp/build/compose/binaries/main/rpm/*.rpm
-            desktopApp/build/compose/binaries/main/appimage/*.AppImage
-
+            
       - name: Upload Windows Artifacts
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
@@ -63,6 +62,7 @@ jobs:
           path: |
             desktopApp/build/compose/binaries/main/exe/*.exe
             desktopApp/build/compose/binaries/main/msi/*.msi
+            desktopApp/build/compose/binaries/main/appimage/*.AppImage
 
   build-android:
     name: Build Android

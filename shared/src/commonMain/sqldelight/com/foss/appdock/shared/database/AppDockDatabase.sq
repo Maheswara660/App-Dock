@@ -1,0 +1,68 @@
+CREATE TABLE WebAppEntity (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    url TEXT NOT NULL,
+    iconPath TEXT,
+    category TEXT,
+    browserChoice TEXT,
+    isStandalone INTEGER NOT NULL DEFAULT 1,
+    notificationsEnabled INTEGER NOT NULL DEFAULT 0,
+    isolatedProfile INTEGER NOT NULL DEFAULT 1,
+    incognitoMode INTEGER NOT NULL DEFAULT 0,
+    launchCount INTEGER NOT NULL DEFAULT 0,
+    createdAt INTEGER NOT NULL
+);
+
+CREATE TABLE CategoryEntity (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    sortOrder INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE BackupHistoryEntity (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    filename TEXT NOT NULL,
+    timestamp INTEGER NOT NULL,
+    sizeBytes INTEGER NOT NULL,
+    type TEXT NOT NULL -- 'manual', 'auto'
+);
+
+getAllWebApps:
+SELECT * FROM WebAppEntity ORDER BY createdAt DESC;
+
+getWebAppById:
+SELECT * FROM WebAppEntity WHERE id = ?;
+
+insertWebApp:
+INSERT INTO WebAppEntity(name, url, iconPath, category, browserChoice, isStandalone, notificationsEnabled, isolatedProfile, incognitoMode, launchCount, createdAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateWebApp:
+UPDATE WebAppEntity
+SET name = ?, url = ?, iconPath = ?, category = ?, browserChoice = ?, isStandalone = ?, notificationsEnabled = ?, isolatedProfile = ?, incognitoMode = ?, launchCount = ?
+WHERE id = ?;
+
+deleteWebAppById:
+DELETE FROM WebAppEntity WHERE id = ?;
+
+getAllCategories:
+SELECT * FROM CategoryEntity ORDER BY sortOrder ASC;
+
+insertCategory:
+INSERT INTO CategoryEntity(name, sortOrder) VALUES (?, ?);
+
+updateCategory:
+UPDATE CategoryEntity SET name = ?, sortOrder = ? WHERE id = ?;
+
+deleteCategoryById:
+DELETE FROM CategoryEntity WHERE id = ?;
+
+getAllBackupHistory:
+SELECT * FROM BackupHistoryEntity ORDER BY timestamp DESC;
+
+insertBackupHistory:
+INSERT INTO BackupHistoryEntity(filename, timestamp, sizeBytes, type)
+VALUES (?, ?, ?, ?);
+
+deleteBackupHistoryById:
+DELETE FROM BackupHistoryEntity WHERE id = ?;

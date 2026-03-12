@@ -36,18 +36,6 @@
 
 ---
 
-## 🛠️ Technology Stack
-
-<div align="center">
-  ![Kotlin](https://img.shields.io/badge/Kotlin-1.9.22-%237F52FF.svg?style=for-the-badge&logo=kotlin&logoColor=white)
-  ![Compose](https://img.shields.io/badge/Compose-1.6.0-000000?style=for-the-badge&logo=jetpackcompose&logoColor=white)
-  ![Git](https://img.shields.io/badge/git-%23F05033.svg?style=for-the-badge&logo=git&logoColor=white)
-  ![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)
-  ![Bash Script](https://img.shields.io/badge/bash_script-%23121011.svg?style=for-the-badge&logo=gnu-bash&logoColor=white)
-</div>
-
----
-
 ## 🚀 Installation Instructions
 
 ### 🪟 Windows Installation

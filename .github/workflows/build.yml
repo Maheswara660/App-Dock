@@ -37,7 +37,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libfuse2 fakeroot
+          sudo apt-get install -y libfuse2 fakeroot rpm
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -45,15 +45,15 @@ jobs:
 
       - name: Build Desktop (Linux)
         if: runner.os == 'Linux'
-        run: ./gradlew :desktopApp:packageAppImage --no-daemon --stacktrace --info
+        run: ./gradlew :desktopApp:packageAppImage :desktopApp:packageDeb :desktopApp:packageRpm --no-daemon --stacktrace --info
 
       - name: Build Desktop (Windows)
         if: runner.os == 'Windows'
-        run: ./gradlew :desktopApp:packageExe --no-daemon --stacktrace --info
+        run: ./gradlew :desktopApp:packageExe :desktopApp:packageMsi --no-daemon --stacktrace --info
 
       - name: Build Desktop (macOS)
         if: runner.os == 'macOS'
-        run: ./gradlew :desktopApp:packageDmg --no-daemon --stacktrace --info
+        run: ./gradlew :desktopApp:packageDmg :desktopApp:packagePkg --no-daemon --stacktrace --info
 
       - name: Stop Gradle Daemon
         run: ./gradlew --stop
@@ -64,21 +64,28 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: AppDock-Linux-${{ github.run_number }}
-          path: desktopApp/build/compose/binaries/main/appimage/*.AppImage
+          path: |
+            desktopApp/build/compose/binaries/main/appimage/*
+            desktopApp/build/compose/binaries/main/deb/*
+            desktopApp/build/compose/binaries/main/rpm/*
             
       - name: Upload Windows Artifacts
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
           name: AppDock-Windows-${{ github.run_number }}
-          path: desktopApp/build/compose/binaries/main/exe/*.exe
+          path: |
+            desktopApp/build/compose/binaries/main/exe/*
+            desktopApp/build/compose/binaries/main/msi/*
 
       - name: Upload macOS Artifacts
         if: runner.os == 'macOS'
         uses: actions/upload-artifact@v4
         with:
           name: AppDock-macOS-${{ github.run_number }}
-          path: desktopApp/build/compose/binaries/main/dmg/*.dmg
+          path: |
+            desktopApp/build/compose/binaries/main/dmg/*
+            desktopApp/build/compose/binaries/main/pkg/*
 
   build-android:
     name: Build Android

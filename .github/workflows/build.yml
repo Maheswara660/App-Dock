@@ -43,17 +43,8 @@ jobs:
         run: chmod +x gradlew
         if: runner.os != 'Windows'
 
-      - name: Build Desktop Packages (Linux)
-        if: runner.os == 'Linux'
-        run: ./gradlew :desktopApp:packageDeb :desktopApp:packageRpm :desktopApp:packageAppImage --no-daemon
-
-      - name: Build Desktop Packages (Windows)
-        if: runner.os == 'Windows'
-        run: ./gradlew :desktopApp:packageExe :desktopApp:packageMsi --no-daemon
-
-      - name: Build Desktop Packages (macOS)
-        if: runner.os == 'macOS'
-        run: ./gradlew :desktopApp:packageDmg :desktopApp:packagePkg --no-daemon
+      - name: Build Desktop Package
+        run: ./gradlew :desktopApp:package --no-daemon --stacktrace --info
 
       - name: Stop Gradle Daemon
         run: ./gradlew --stop
@@ -64,28 +55,21 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: AppDock-Linux-${{ github.run_number }}
-          path: |
-            desktopApp/build/compose/binaries/main/deb/*.deb
-            desktopApp/build/compose/binaries/main/rpm/*.rpm
-            desktopApp/build/compose/binaries/main/appimage/*.AppImage
+          path: desktopApp/build/compose/binaries/main/appimage/*.AppImage
             
       - name: Upload Windows Artifacts
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
           name: AppDock-Windows-${{ github.run_number }}
-          path: |
-            desktopApp/build/compose/binaries/main/exe/*.exe
-            desktopApp/build/compose/binaries/main/msi/*.msi
+          path: desktopApp/build/compose/binaries/main/exe/*.exe
 
       - name: Upload macOS Artifacts
         if: runner.os == 'macOS'
         uses: actions/upload-artifact@v4
         with:
           name: AppDock-macOS-${{ github.run_number }}
-          path: |
-            desktopApp/build/compose/binaries/main/dmg/*.dmg
-            desktopApp/build/compose/binaries/main/pkg/*.pkg
+          path: desktopApp/build/compose/binaries/main/dmg/*.dmg
 
   build-android:
     name: Build Android
@@ -107,7 +91,9 @@ jobs:
         env:
           ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
         run: |
-          echo "$ANDROID_KEYSTORE" | base64 --decode > androidApp/release-keystore.jks
+          if [ -n "$ANDROID_KEYSTORE" ]; then
+            echo "$ANDROID_KEYSTORE" | base64 --decode > androidApp/release-keystore.jks
+          fi
 
       - name: Build Android APK
         env:
@@ -115,7 +101,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: ./gradlew :androidApp:assembleRelease --no-daemon
+        run: ./gradlew :androidApp:assembleRelease --no-daemon --stacktrace --info
 
       - name: Stop Gradle Daemon
         run: ./gradlew --stop

@@ -34,11 +34,13 @@ android {
         create("release") {
             val keystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
             val keystoreFile = if (keystorePath != null) file(keystorePath) else null
-            if (keystoreFile?.exists() == true) {
+            if (keystoreFile != null && keystoreFile.exists()) {
                 storeFile = keystoreFile
                 storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
                 keyAlias = System.getenv("ANDROID_KEY_ALIAS")
                 keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+            } else {
+                println("Skipping release signing: Keystore file not found at $keystorePath")
             }
         }
     }

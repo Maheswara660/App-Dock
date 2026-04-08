@@ -33,9 +33,9 @@ compose.desktop {
             // We define them based on the operating system running the build.
             val os = System.getProperty("os.name").toLowerCase()
             val availableFormats = when {
-                os.contains("win") -> listOf(TargetFormat.Exe, TargetFormat.Msi)
-                os.contains("mac") -> listOf(TargetFormat.Dmg, TargetFormat.Pkg)
-                else -> listOf(TargetFormat.Deb, TargetFormat.Rpm, TargetFormat.AppImage)
+                os.contains("win") -> listOf(TargetFormat.Exe)
+                os.contains("mac") -> listOf(TargetFormat.Dmg)
+                else -> listOf(TargetFormat.AppImage)
             }
             targetFormats(*availableFormats.toTypedArray())
             packageName = "AppDock"

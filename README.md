@@ -62,6 +62,8 @@ Do you have 50 browser tabs open just for WhatsApp, Gmail, and Notion? **App Doc
 ---
 
 ### 🐧 For Linux
+> [!IMPORTANT]
+> **Notice**: Due to some techinal issues `.AppImage` got delayed, be patient until next release is updated. 
 - **Recommended (AppImage)**: This is a "portable" app that works on almost any Linux version without installation.
   1. Download the `.AppImage` from [Latest Releases](https://github.com/Maheswararr/App-Dock/releases).
   2. Right-click the file and select **Properties > Permissions** and check **"Allow executing file as program"**.
@@ -74,6 +76,7 @@ Do you have 50 browser tabs open just for WhatsApp, Gmail, and Notion? **App Doc
 3. **Build & Install**: `makepkg -si`
 
 #### **Other Linux Distributions**
+- **Recommended**: Open the terminal from the folder, where the installer is downloaded/present before executing the commands.
 - **Debian/Ubuntu/Kali**: `sudo dpkg -i App-Dock-*.deb` (Fix with `sudo apt install -f`).
 - **Fedora/RHEL/CentOS**: `sudo rpm -i App-Dock-*.rpm`
 
@@ -88,7 +91,7 @@ Do you have 50 browser tabs open just for WhatsApp, Gmail, and Notion? **App Doc
 ## 🛠️ Common Fixes
 - **App won't launch (Desktop)**: Ensure you have **Java 21** or later installed if building from source.
 - **Building from source?**: Ensure you have the latest Gradle (8.13) and JDK 21.
-- **Something else?**: Open an [Issue](https://github.com/Maheswararr/App-Dock/issues) and we'll help you out!
+- **Something else?**: Open an [Issue](https://github.com/Maheswararr/App-Dock/issues) and I'll help you out!
 
 ---
 
@@ -102,7 +105,7 @@ Do you have 50 browser tabs open just for WhatsApp, Gmail, and Notion? **App Doc
 
 ## ❤️ Love the project?
 
-App Dock is free and open-source. If it makes your digital life easier, feel free to support our work!
+App Dock is free and open-source. If it makes your digital life easier, feel free to support my work!
 
 [<img src="https://storage.ko-fi.com/cdn/kofi3.png?v=3" height="36" alt="buy me a coffee at ko-fi.com" />](https://ko-fi.com/Maheswara660)
 

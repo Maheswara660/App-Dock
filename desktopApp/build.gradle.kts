@@ -29,19 +29,20 @@ compose.desktop {
             // Windows: TargetFormat.Exe, TargetFormat.Msi
             // Note: .pacman is not natively supported by Compose Multiplatform (jpackage).
             // A common workaround for Arch Linux is to build a .deb and use AUR / PKGBUILD.
-            val currentOs = System.getProperty("os.name").toLowerCase()
-            val availableFormats = mutableListOf(
-                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Dmg,
-                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Pkg,
-                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Exe,
-                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Msi,
-                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Deb,
-                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Rpm
-            )
-            if (currentOs.contains("linux")) {
-                availableFormats.add(org.jetbrains.compose.desktop.application.dsl.TargetFormat.AppImage)
+            // jpackage only supports native formats for the host OS.
+            // We define them based on the operating system running the build.
+            val os = System.getProperty("os.name").toLowerCase()
+            when {
+                os.contains("win") -> {
+                    targetFormats(TargetFormat.Exe, TargetFormat.Msi)
+                }
+                os.contains("mac") -> {
+                    targetFormats(TargetFormat.Dmg, TargetFormat.Pkg)
+                }
+                else -> {
+                    targetFormats(TargetFormat.Deb, TargetFormat.Rpm, TargetFormat.AppImage)
+                }
             }
-            targetFormats(*availableFormats.toTypedArray())
             packageName = "App Dock"
             packageVersion = "1.1.0"
             vendor = "AppDock"

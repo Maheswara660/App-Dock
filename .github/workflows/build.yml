@@ -43,8 +43,17 @@ jobs:
         run: chmod +x gradlew
         if: runner.os != 'Windows'
 
-      - name: Build Desktop Package
-        run: ./gradlew :desktopApp:package --no-daemon --stacktrace --info
+      - name: Build Desktop (Linux)
+        if: runner.os == 'Linux'
+        run: ./gradlew :desktopApp:packageAppImage --no-daemon --stacktrace --info
+
+      - name: Build Desktop (Windows)
+        if: runner.os == 'Windows'
+        run: ./gradlew :desktopApp:packageExe --no-daemon --stacktrace --info
+
+      - name: Build Desktop (macOS)
+        if: runner.os == 'macOS'
+        run: ./gradlew :desktopApp:packageDmg --no-daemon --stacktrace --info
 
       - name: Stop Gradle Daemon
         run: ./gradlew --stop

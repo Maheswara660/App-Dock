@@ -32,22 +32,17 @@ compose.desktop {
             // jpackage only supports native formats for the host OS.
             // We define them based on the operating system running the build.
             val os = System.getProperty("os.name").toLowerCase()
-            when {
-                os.contains("win") -> {
-                    targetFormats(TargetFormat.Exe, TargetFormat.Msi)
-                }
-                os.contains("mac") -> {
-                    targetFormats(TargetFormat.Dmg, TargetFormat.Pkg)
-                }
-                else -> {
-                    targetFormats(TargetFormat.Deb, TargetFormat.Rpm, TargetFormat.AppImage)
-                }
+            val availableFormats = when {
+                os.contains("win") -> listOf(TargetFormat.Exe, TargetFormat.Msi)
+                os.contains("mac") -> listOf(TargetFormat.Dmg, TargetFormat.Pkg)
+                else -> listOf(TargetFormat.Deb, TargetFormat.Rpm, TargetFormat.AppImage)
             }
-            packageName = "App Dock"
+            targetFormats(*availableFormats.toTypedArray())
+            packageName = "AppDock"
             packageVersion = "1.1.0"
             vendor = "AppDock"
             description = "App Dock - Modern Web App Manager"
-            copyright = "© 2024 AppDock"
+            copyright = "© 2026 AppDock"
             
             modules("java.sql")
 

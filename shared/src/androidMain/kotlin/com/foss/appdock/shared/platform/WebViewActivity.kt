@@ -23,6 +23,7 @@ class WebViewActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        val url = intent.getStringExtra("url") ?: return finish()
         if (!android.webkit.URLUtil.isValidUrl(url)) return finish()
         isIncognito = intent.getBooleanExtra("isIncognito", false)
         val isIsolated = intent.getBooleanExtra("isIsolated", false)

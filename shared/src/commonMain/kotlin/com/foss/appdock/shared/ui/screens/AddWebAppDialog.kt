@@ -20,6 +20,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.foss.appdock.shared.platform.ImagePicker
 import com.foss.appdock.shared.platform.platformIsDesktop
+import com.foss.appdock.shared.platform.VerticalScrollbar
+import com.foss.appdock.shared.platform.platformIsAndroid
 import com.foss.appdock.shared.platform.queryInstalledBrowsers
 import com.foss.appdock.shared.ui.theme.*
 
@@ -59,7 +61,7 @@ fun AddWebAppScreen(
         val defaultCategories = listOf("Productivity", "Social", "Development", "Entertainment")
         val categories =
                 if (availableCategories.isEmpty()) defaultCategories else availableCategories
-        val browsers = remember { queryInstalledBrowsers() }
+        val browsers = queryInstalledBrowsers(null)
 
         val formValid = name.isNotBlank() && url.isNotBlank() && url != "https://"
 
@@ -103,14 +105,20 @@ fun AddWebAppScreen(
                                 Spacer(modifier = Modifier.width(40.dp)) // Balance the back button
                         }
 
+                        val scrollState = rememberScrollState()
                         // ── Scrollable Form ───────────────────────────────────────────────────
-                        Column(
-                                modifier =
-                                        Modifier.weight(1f)
-                                                .verticalScroll(rememberScrollState())
-                                                .padding(vertical = 16.dp),
-                                verticalArrangement = Arrangement.spacedBy(24.dp)
-                        ) {
+                        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                                Column(
+                                        modifier =
+                                                Modifier.fillMaxSize()
+                                                        .verticalScroll(scrollState)
+                                                        .padding(
+                                                                top = 16.dp, 
+                                                                bottom = 16.dp, 
+                                                                end = if (platformIsDesktop) 16.dp else 0.dp
+                                                        ),
+                                        verticalArrangement = Arrangement.spacedBy(24.dp)
+                                ) {
                                 // ── Basic Info ──────────────────────────────────
                                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                                         SolidTextField(
@@ -150,23 +158,21 @@ fun AddWebAppScreen(
                                                                 }
                                                         )
                                                 }
-                                                if (platformIsDesktop) {
-                                                        Box(modifier = Modifier.weight(1f)) {
-                                                                SolidDropdownField(
-                                                                        label = "Browser",
-                                                                        value = selectedBrowser,
-                                                                        expanded = browserExpanded,
-                                                                        onExpandedChange = {
-                                                                                browserExpanded = it
-                                                                        },
-                                                                        options = browsers,
-                                                                        onOptionSelected = {
-                                                                                selectedBrowser = it
-                                                                                browserExpanded =
-                                                                                        false
-                                                                        }
-                                                                )
-                                                        }
+                                                Box(modifier = Modifier.weight(1f)) {
+                                                        SolidDropdownField(
+                                                                label = "Browser",
+                                                                value = selectedBrowser,
+                                                                expanded = browserExpanded,
+                                                                onExpandedChange = {
+                                                                        browserExpanded = it
+                                                                },
+                                                                options = browsers,
+                                                                onOptionSelected = {
+                                                                        selectedBrowser = it
+                                                                        browserExpanded =
+                                                                                false
+                                                                }
+                                                        )
                                                 }
                                         }
                                 }
@@ -235,11 +241,21 @@ fun AddWebAppScreen(
                                                                         }
 
                                                         if (derivedIconUrl.isNotBlank()) {
+                                                                val resolvedPath = if (
+                                                                        derivedIconUrl.startsWith("http") || 
+                                                                        derivedIconUrl.startsWith("data:") || 
+                                                                        derivedIconUrl.startsWith("file://")
+                                                                ) {
+                                                                        derivedIconUrl
+                                                                } else {
+                                                                        "file:///${derivedIconUrl.replace("\\", "/")}"
+                                                                }
+
                                                                 io.kamel.image.KamelImage(
                                                                         resource =
                                                                                 io.kamel.image
                                                                                         .asyncPainterResource(
-                                                                                                derivedIconUrl
+                                                                                                resolvedPath
                                                                                         ),
                                                                         contentDescription =
                                                                                 "App Icon",
@@ -346,58 +362,66 @@ fun AddWebAppScreen(
                                 }
 
                                 // ── Advanced Settings ────────────────────────────
-                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Text(
-                                                "Advanced Settings",
-                                                style = MaterialTheme.typography.labelMedium,
-                                                color = adaptiveOnSurface()
-                                        )
-                                        Column(
-                                                modifier =
-                                                        Modifier.fillMaxWidth()
-                                                                .clip(RoundedCornerShape(16.dp))
-                                                                .background(
-                                                                        adaptiveSurfaceVariantBackground()
-                                                                )
-                                                                .border(
-                                                                        1.dp,
-                                                                        adaptiveSurfaceVariantBorder(),
-                                                                        RoundedCornerShape(16.dp)
-                                                                )
-                                                                .padding(16.dp),
-                                                verticalArrangement = Arrangement.spacedBy(16.dp)
-                                        ) {
-                                                AdvancedSettingToggle(
-                                                        title = "Isolation Mode (Sandboxing)",
-                                                        subtitle =
-                                                                "Run this app in an isolated container for enhanced privacy.",
-                                                        checked = isolatedProfile,
-                                                        onCheckedChange = { isolatedProfile = it }
+                                if (!platformIsAndroid) {
+                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                Text(
+                                                        "Advanced Settings",
+                                                        style = MaterialTheme.typography.labelMedium,
+                                                        color = adaptiveOnSurface()
                                                 )
-                                                AdvancedSettingToggle(
-                                                        title = "Full Screen Mode",
-                                                        subtitle =
-                                                                "Hide browser address bar and UI.",
-                                                        checked = isStandalone,
-                                                        onCheckedChange = { isStandalone = it }
-                                                )
-                                                AdvancedSettingToggle(
-                                                        title = "Incognito Mode",
-                                                        subtitle = "Launch in a private window.",
-                                                        checked = incognitoMode,
-                                                        onCheckedChange = { incognitoMode = it }
-                                                )
-                                                AdvancedSettingToggle(
-                                                        title = "Create Desktop Shortcut",
-                                                        subtitle =
-                                                                "Add a launcher to your desktop for quick access.",
-                                                        checked = createShortcut,
-                                                        onCheckedChange = { createShortcut = it }
-                                                )
+                                                Column(
+                                                        modifier =
+                                                                Modifier.fillMaxWidth()
+                                                                        .clip(RoundedCornerShape(16.dp))
+                                                                        .background(
+                                                                                adaptiveSurfaceVariantBackground()
+                                                                        )
+                                                                        .border(
+                                                                                1.dp,
+                                                                                adaptiveSurfaceVariantBorder(),
+                                                                                RoundedCornerShape(16.dp)
+                                                                        )
+                                                                        .padding(16.dp),
+                                                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                                                ) {
+                                                        AdvancedSettingToggle(
+                                                                title = "Isolation Mode (Sandboxing)",
+                                                                subtitle =
+                                                                        "Run this app in an isolated container for enhanced privacy.",
+                                                                checked = isolatedProfile,
+                                                                onCheckedChange = { isolatedProfile = it }
+                                                        )
+                                                        AdvancedSettingToggle(
+                                                                title = "Full Screen Mode",
+                                                                subtitle =
+                                                                        "Hide browser address bar and UI.",
+                                                                checked = isStandalone,
+                                                                onCheckedChange = { isStandalone = it }
+                                                        )
+                                                        AdvancedSettingToggle(
+                                                                title = "Incognito Mode",
+                                                                subtitle = "Launch in a private window.",
+                                                                checked = incognitoMode,
+                                                                onCheckedChange = { incognitoMode = it }
+                                                        )
+                                                        AdvancedSettingToggle(
+                                                                title = "Create Desktop Shortcut",
+                                                                subtitle =
+                                                                        "Add a launcher to your desktop for quick access.",
+                                                                checked = createShortcut,
+                                                                onCheckedChange = { createShortcut = it }
+                                                        )
+                                                }
                                         }
                                 }
 
                                 Spacer(modifier = Modifier.height(30.dp))
+                                }
+
+                                VerticalScrollbar(
+                                        modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                                        scrollState = scrollState
+                                )
                         }
 
                         // ── Footer Actions ────────────────────────────────────────────────────

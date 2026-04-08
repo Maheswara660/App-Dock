@@ -38,6 +38,7 @@ kotlin {
                 implementation(libs.androidx.activity.compose)
                 implementation(libs.androidx.appcompat)
                 implementation(libs.androidx.core.ktx)
+                implementation("androidx.browser:browser:1.7.0")
                 
                 implementation(libs.ktor.client.okhttp)
                 implementation(libs.kotlinx.coroutines.android)
@@ -51,7 +52,19 @@ kotlin {
                 implementation(libs.kotlinx.coroutines.swing)
                 implementation(libs.ktor.client.cio)
                 implementation(libs.slf4j.simple)
+                implementation(libs.compose.webview.multiplatform)
             }
+        }
+    }
+
+    targets.all {
+        compilations.all {
+            kotlinOptions.freeCompilerArgs += listOf(
+                "-Xexpect-actual-classes",
+                "-opt-in=org.jetbrains.compose.resources.ExperimentalResourceApi",
+                "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+                "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi"
+            )
         }
     }
 }

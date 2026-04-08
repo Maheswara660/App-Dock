@@ -18,6 +18,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.foss.appdock.shared.data.DatabaseHelper
+import com.foss.appdock.shared.domain.BackupHistory
+import com.foss.appdock.shared.platform.VerticalScrollbar
+import com.foss.appdock.shared.platform.platformIsAndroid
+import com.foss.appdock.shared.platform.platformIsDesktop
+import com.foss.appdock.shared.platform.queryInstalledBrowsers
 import com.foss.appdock.shared.ui.theme.adaptiveOnSurface
 import com.foss.appdock.shared.ui.theme.adaptiveSurfaceVariantBackground
 import com.foss.appdock.shared.ui.theme.adaptiveSurfaceVariantBorder
@@ -71,12 +76,14 @@ fun SettingsAppearanceScreen(
                 )
 
         AppScaffold(bottomBar = {}) {
-                Column(
-                        modifier =
-                                Modifier.fillMaxSize()
-                                        .padding(horizontal = 24.dp, vertical = 24.dp)
-                                        .verticalScroll(rememberScrollState()),
-                ) {
+                val scrollState = rememberScrollState()
+                Box(modifier = Modifier.fillMaxSize()) {
+                        Column(
+                                modifier =
+                                        Modifier.fillMaxSize()
+                                                .padding(horizontal = 24.dp, vertical = 24.dp)
+                                                .verticalScroll(scrollState),
+                        ) {
                         DockPageHeader(title = "Appearance", onBack = onBack)
 
                         // ── 1. Theme Section ───────────────────────────────────
@@ -291,6 +298,12 @@ fun SettingsAppearanceScreen(
                         }
 
                         Spacer(Modifier.height(40.dp))
+                        }
+                
+                        VerticalScrollbar(
+                                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                                scrollState = scrollState
+                        )
                 }
         }
 }
@@ -461,14 +474,18 @@ private fun IconShapeOption(
 @Composable
 fun SettingsPrivacyScreen(onBack: () -> Unit) {
         AppScaffold(bottomBar = {}) {
-                Column(
-                        modifier =
-                                Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 24.dp)
-                ) {
-                        DockPageHeader(title = "Privacy", onBack = onBack)
+                val scrollState = rememberScrollState()
+                Box(modifier = Modifier.fillMaxSize()) {
+                        Column(
+                                modifier =
+                                        Modifier.fillMaxSize()
+                                                .padding(horizontal = 24.dp, vertical = 24.dp)
+                                                .verticalScroll(scrollState)
+                        ) {
+                                DockPageHeader(title = "Privacy", onBack = onBack)
 
                         Column(
-                                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())
+                                modifier = Modifier.fillMaxWidth()
                         ) {
                                 SettingsSectionTitle("Local Data Management")
                                 Surface(
@@ -518,7 +535,13 @@ fun SettingsPrivacyScreen(onBack: () -> Unit) {
                                                 )
                                         }
                                 }
-                        }
+                        } // Close nested column
+                        } // Close outer column
+                        
+                        VerticalScrollbar(
+                                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                                scrollState = scrollState
+                        )
                 }
         }
 }
@@ -563,7 +586,7 @@ private fun ToggleOption(
 
 @Composable
 fun SettingsBackupScreen(
-        databaseHelper: com.foss.appdock.shared.data.DatabaseHelper,
+        databaseHelper: DatabaseHelper,
         onExportClick: () -> Unit,
         onImportClick: () -> Unit,
         onBack: () -> Unit,
@@ -573,44 +596,78 @@ fun SettingsBackupScreen(
         val coroutineScope = rememberCoroutineScope()
 
         AppScaffold(snackbarHostState = snackbarHostState, bottomBar = {}) {
-                Column(
-                        modifier =
-                                Modifier.fillMaxSize()
-                                        .padding(horizontal = 24.dp, vertical = 24.dp)
-                                        .verticalScroll(rememberScrollState())
-                ) {
+                val scrollState = rememberScrollState()
+                Box(modifier = Modifier.fillMaxSize()) {
+                        Column(
+                                modifier =
+                                        Modifier.fillMaxSize()
+                                                .padding(horizontal = 24.dp, vertical = 24.dp)
+                                                .verticalScroll(scrollState)
+                        ) {
                         DockPageHeader(title = "Backup & Restore", onBack = onBack)
 
                         Spacer(Modifier.height(32.dp))
 
-                        // ── 1. Action Cards ──────────────────────────────────
-                        Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                                BackupActionCard(
-                                        title = "Export Data",
-                                        description =
-                                                "Create a local backup file of all your web apps, settings, and layout.",
-                                        icon = Icons.Filled.FileDownload, // matching mockup icon
-                                        // direction
-                                        buttonText = "Create Backup File",
-                                        modifier = Modifier.weight(1f),
-                                        onClick = onExportClick
-                                )
-                                BackupActionCard(
-                                        title = "Import Data",
-                                        description =
-                                                "Restore your setup from an existing backup file on your device.",
-                                        icon = Icons.Filled.FileUpload,
-                                        buttonText = "Select Backup File",
-                                        iconColor = Color(0xFF10B981),
-                                        modifier = Modifier.weight(1f),
-                                        onClick = onImportClick
-                                )
+                        val buttonArrangement =
+                                if (platformIsAndroid)
+                                        Arrangement.spacedBy(12.dp)
+                                else Arrangement.spacedBy(16.dp)
+
+                        if (!platformIsAndroid) {
+                                        Row(
+                                                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                                                horizontalArrangement = buttonArrangement
+                                        ) {
+                                        BackupActionCard(
+                                                title = "Export Data",
+                                                description = "Backup your apps and categories.",
+                                                icon = Icons.Filled.FileDownload,
+                                                buttonText = "Export",
+                                                modifier = Modifier.weight(1f),
+                                                onClick = onExportClick
+                                        )
+                                        BackupActionCard(
+                                                title = "Import Data",
+                                                description = "Restore from a backup file.",
+                                                icon = Icons.Filled.FileUpload,
+                                                buttonText = "Import",
+                                                iconColor = Color(0xFF10B981),
+                                                modifier = Modifier.weight(1f),
+                                                onClick = onImportClick
+                                        )
+                                }
+                        } else {
+                                Column(verticalArrangement = buttonArrangement) {
+                                        BackupActionCard(
+                                                title = "Export Data",
+                                                description =
+                                                        "Create a local backup file of all your web apps, settings, and layout.",
+                                                icon = Icons.Filled.FileDownload,
+                                                buttonText = "Create Backup File",
+                                                onClick = onExportClick
+                                        )
+                                        BackupActionCard(
+                                                title = "Import Data",
+                                                description =
+                                                        "Restore your setup from an existing backup file on your device.",
+                                                icon = Icons.Filled.FileUpload,
+                                                buttonText = "Select Backup File",
+                                                iconColor = Color(0xFF10B981),
+                                                onClick = onImportClick
+                                        )
+                                }
                         }
 
-                        Spacer(Modifier.height(40.dp))
+                        Spacer(Modifier.height(32.dp))
+
+                        Text(
+                                "Previous Backups and Imports History",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = adaptiveOnSurface()
+                        )
+
+                        Spacer(Modifier.height(16.dp))
 
                         // ── 2. Previous Backups ──────────────────────────────
                         if (history.isNotEmpty()) {
@@ -644,7 +701,13 @@ fun SettingsBackupScreen(
                                                 color = MaterialTheme.colorScheme.outline
                                         )
                                 }
-                        }
+                        } // Close history block (isNotEmpty)
+                        } // Close outer Column
+                        
+                        VerticalScrollbar(
+                                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                                scrollState = scrollState
+                        )
                 }
         }
 }
@@ -739,7 +802,7 @@ private fun BackupActionCard(
 
 @Composable
 private fun BackupHistoryItem(
-        item: com.foss.appdock.shared.domain.BackupHistory,
+        item: BackupHistory,
         onRestore: () -> Unit,
         onDelete: () -> Unit
 ) {
@@ -830,16 +893,19 @@ fun SettingsAppManagementScreen(
         onBack: () -> Unit
 ) {
         AppScaffold(bottomBar = {}) {
-                Column(
-                        modifier =
-                                Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 24.dp)
-                ) {
+                val scrollState = rememberScrollState()
+                Box(modifier = Modifier.fillMaxSize()) {
+                        Column(
+                                modifier =
+                                        Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 24.dp)
+                                                .verticalScroll(scrollState)
+                        ) {
                         DockPageHeader(title = "App Management", onBack = onBack)
 
                         Column(
-                                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())
+                                modifier = Modifier.fillMaxWidth()
                         ) {
-                                if (com.foss.appdock.shared.platform.platformIsDesktop) {
+                                if (platformIsDesktop || platformIsAndroid) {
                                         SettingsSectionTitle("Default Browser")
                                         Surface(
                                                 shape = RoundedCornerShape(16.dp),
@@ -853,10 +919,7 @@ fun SettingsAppManagementScreen(
                                                                 )
                                         ) {
                                                 Column {
-                                                        val browsers = remember {
-                                                                com.foss.appdock.shared.platform
-                                                                        .queryInstalledBrowsers()
-                                                        }
+                                                        val browsers = queryInstalledBrowsers(null)
                                                         browsers.forEachIndexed { index, browser ->
                                                                 val icon =
                                                                         if (browser ==
@@ -908,6 +971,12 @@ fun SettingsAppManagementScreen(
                                         }
                                 }
                         }
+                        }
+
+                        VerticalScrollbar(
+                                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                                scrollState = scrollState
+                        )
                 }
         }
 }
@@ -917,13 +986,15 @@ fun SettingsAppManagementScreen(
 @Composable
 fun SettingsAboutScreen(onOpenUrl: (String) -> Unit, onBack: () -> Unit) {
         AppScaffold(bottomBar = {}) {
-                Column(
-                        modifier =
-                                Modifier.fillMaxSize()
-                                        .padding(horizontal = 24.dp, vertical = 24.dp)
-                                        .verticalScroll(rememberScrollState()),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+                val scrollState = rememberScrollState()
+                Box(modifier = Modifier.fillMaxSize()) {
+                        Column(
+                                modifier =
+                                        Modifier.fillMaxSize()
+                                                .padding(horizontal = 24.dp, vertical = 24.dp)
+                                                .verticalScroll(scrollState),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
                         // ── Header ─────────────────────────────────────────────────────────────
                         Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -958,6 +1029,30 @@ fun SettingsAboutScreen(onOpenUrl: (String) -> Unit, onBack: () -> Unit) {
                                 Spacer(modifier = Modifier.width(40.dp))
                         }
 
+                        Spacer(Modifier.height(32.dp))
+
+                        // ── App Icon ───────────────────────────────────────────────────────
+                        Surface(
+                                modifier = Modifier.size(100.dp),
+                                shape = RoundedCornerShape(24.dp),
+                                color = Color.Transparent,
+                        ) {
+                                Box(
+                                        modifier = Modifier.fillMaxSize()
+                                                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(24.dp)),
+                                        contentAlignment = Alignment.Center
+                                ) {
+                                        Icon(
+                                                imageVector = Icons.Filled.Apps,
+                                                contentDescription = "App Dock Icon",
+                                                tint = MaterialTheme.colorScheme.onPrimary,
+                                                modifier = Modifier.size(48.dp)
+                                        )
+                                }
+                        }
+
+                        Spacer(Modifier.height(24.dp))
+
                         // ── App Branding ───────────────────────────────────────────────────────
                         Text(
                                 "App Dock",
@@ -966,12 +1061,12 @@ fun SettingsAboutScreen(onOpenUrl: (String) -> Unit, onBack: () -> Unit) {
                                 color = adaptiveOnSurface()
                         )
                         Text(
-                                "Version 1.0 (Stable)",
+                                "Version 1.1.0 (Stable)",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
-                        Spacer(Modifier.height(24.dp))
+                        Spacer(Modifier.height(32.dp))
 
                         // ── Action Cards ───────────────────────────────────────────────────────
                         Row(
@@ -1083,7 +1178,13 @@ fun SettingsAboutScreen(onOpenUrl: (String) -> Unit, onBack: () -> Unit) {
                         )
                         Spacer(Modifier.height(32.dp))
                 }
+
+                VerticalScrollbar(
+                        modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                        scrollState = scrollState
+                )
         }
+    }
 }
 
 @Composable

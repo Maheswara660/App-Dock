@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.foss.appdock.shared.data.DatabaseHelper
 import com.foss.appdock.shared.domain.Category
+import com.foss.appdock.shared.platform.VerticalScrollbar
 import com.foss.appdock.shared.platform.platformIsDesktop
 import com.foss.appdock.shared.ui.theme.adaptiveOnSurface
 import kotlin.math.abs
@@ -46,6 +47,7 @@ fun ManageCategoriesScreen(
 ) {
         val categories by databaseHelper.getAllCategories().collectAsState(emptyList())
         val coroutineScope = rememberCoroutineScope()
+        val listState = androidx.compose.foundation.lazy.rememberLazyListState()
         var editingCategory by remember { mutableStateOf<Category?>(null) }
         var deletingCategory by remember { mutableStateOf<Category?>(null) }
         var showCreateDialog by remember { mutableStateOf(false) }
@@ -66,24 +68,26 @@ fun ManageCategoriesScreen(
                 Column(
                         modifier =
                                 Modifier.fillMaxSize()
-                                        .padding(horizontal = 24.dp, vertical = 24.dp),
+                                        .padding(vertical = 24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                        DockPageHeader(title = "Categories", onBack = onBack)
+                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
+                                DockPageHeader(title = "Categories", onBack = onBack)
 
-                        Spacer(Modifier.height(16.dp))
+                                Spacer(Modifier.height(16.dp))
 
-                        SortDropdownList(
-                                currentSort = sortOrder,
-                                onSortChanged = { sortOrder = it }
-                        )
+                                SortDropdownList(
+                                        currentSort = sortOrder,
+                                        onSortChanged = { sortOrder = it }
+                                )
 
-                        Spacer(Modifier.height(16.dp))
+                                Spacer(Modifier.height(16.dp))
+                        }
 
                         if (categories.isEmpty()) {
                                 // ── Empty State ──────────────────────────────────────────────────
                                 Column(
-                                        modifier = Modifier.weight(1f),
+                                        modifier = Modifier.weight(1f).padding(horizontal = 24.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                         verticalArrangement = Arrangement.Center
                                 ) {
@@ -153,31 +157,39 @@ fun ManageCategoriesScreen(
                                                 }
                                         }
 
-                                LazyColumn(
-                                        modifier = Modifier.weight(1f).fillMaxWidth(),
-                                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                                        contentPadding = PaddingValues(bottom = 90.dp)
-                                ) {
-                                        items(sortedCategories, key = { it.id }) { category ->
-                                                val cHash = category.name.hashCode()
-                                                val catColor =
-                                                        iconColors[
-                                                                kotlin.math.abs(cHash) %
-                                                                        iconColors.size]
+                                Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                                        LazyColumn(
+                                                state = listState,
+                                                modifier = Modifier.fillMaxSize(),
+                                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                                contentPadding = PaddingValues(bottom = 90.dp, start = 24.dp, end = 24.dp)
+                                        ) {
+                                                items(sortedCategories, key = { it.id }) { category ->
+                                                        val cHash = category.name.hashCode()
+                                                        val catColor =
+                                                                iconColors[
+                                                                        kotlin.math.abs(cHash) %
+                                                                                iconColors.size]
 
-                                                val appCount =
-                                                        webApps.count {
-                                                                it.category == category.name
-                                                        }
-                                                SwipeableCategoryListItem(
-                                                        category = category,
-                                                        appCount = appCount,
-                                                        iconColor = catColor,
-                                                        onClick = { onCategoryClick(category) },
-                                                        onEdit = { editingCategory = category },
-                                                        onDelete = { deletingCategory = category }
-                                                )
+                                                        val appCount =
+                                                                webApps.count {
+                                                                        it.category == category.name
+                                                                }
+                                                        SwipeableCategoryListItem(
+                                                                category = category,
+                                                                appCount = appCount,
+                                                                iconColor = catColor,
+                                                                onClick = { onCategoryClick(category) },
+                                                                onEdit = { editingCategory = category },
+                                                                onDelete = { deletingCategory = category }
+                                                        )
+                                                }
                                         }
+
+                                        VerticalScrollbar(
+                                                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                                                listState = listState
+                                        )
                                 }
                         }
                 }

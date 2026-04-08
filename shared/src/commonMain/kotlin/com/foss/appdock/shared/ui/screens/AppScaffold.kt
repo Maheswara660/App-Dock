@@ -33,12 +33,16 @@ fun AppScaffold(
         Scaffold(
                 modifier = modifier,
                 containerColor = MaterialTheme.colorScheme.background,
-                snackbarHost = { SolidSnackbarHost(finalSnackbarHostState) },
-                contentWindowInsets = WindowInsets(0, 0, 0, 0)
+                contentWindowInsets = WindowInsets.systemBars
         ) { paddingValues ->
                 Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
                         // ── Main Content Layer ────────────────────────────────────────────────
                         Box(modifier = Modifier.fillMaxSize()) { content() }
+
+                        // ── Snackbar Layer ────────────────────────────────────────────────
+                        Box(modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth()) {
+                                SolidSnackbarHost(finalSnackbarHostState)
+                        }
 
                         // Floating Bottom Bar Layer
                         Box(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
@@ -68,8 +72,8 @@ private fun SolidSnackbar(snackbarData: SnackbarData) {
         val iconVec = if (isError) Icons.Filled.Info else Icons.Filled.CheckCircle
 
         Box(
-                modifier = Modifier.fillMaxWidth().padding(top = 80.dp),
-                contentAlignment = Alignment.TopCenter
+                modifier = Modifier.fillMaxWidth().padding(top = 80.dp, end = 24.dp),
+                contentAlignment = Alignment.TopEnd
         ) {
                 Row(
                         modifier =

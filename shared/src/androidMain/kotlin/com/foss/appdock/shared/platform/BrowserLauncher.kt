@@ -3,6 +3,7 @@ package com.foss.appdock.shared.platform
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.browser.customtabs.CustomTabsIntent
 
 actual class BrowserLauncher actual constructor(private val context: Any?) {
     actual fun openUrlInBrowser(
@@ -19,42 +20,57 @@ actual class BrowserLauncher actual constructor(private val context: Any?) {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
 
-        // Apply advanced flags if supported by known browsers
         val browserLower = browserName?.lowercase() ?: ""
+        
+        // Better package mapping
+        val packageName = when {
+            browserLower.contains("chrome") -> "com.android.chrome"
+            browserLower.contains("firefox") -> "org.mozilla.firefox"
+            browserLower.contains("edge") -> "com.microsoft.emmx"
+            browserLower.contains("brave") -> "com.brave.browser"
+            browserLower.contains("samsung") -> "com.sec.android.app.sbrowser"
+            browserLower.contains("opera") -> "com.opera.browser"
+            browserLower.contains("vivaldi") -> "com.vivaldi.browser"
+            else -> null
+        }
+
+        if (packageName != null) {
+            intent.setPackage(packageName)
+        }
+
         if (isIncognito) {
             when {
-                browserLower.contains("chrome") -> {
+                packageName == "com.android.chrome" -> {
                     intent.putExtra("com.google.android.apps.chrome.EXTRA_IS_INCOGNITO", true)
                 }
-                browserLower.contains("firefox") -> {
+                packageName == "org.mozilla.firefox" -> {
                     intent.putExtra("private_browsing_mode", true)
                 }
                 else -> {
-                    // Try generic custom tabs incognito extra
                     intent.putExtra("android.support.customtabs.extra.INCOGNITO", true)
                 }
             }
         }
 
-        // Map AppDock browser names to Android package names
-        val packageName =
-                when (browserLower) {
-                    "chrome" -> "com.android.chrome"
-                    "firefox" -> "org.mozilla.firefox"
-                    "edge" -> "com.microsoft.emmx"
-                    "brave" -> "com.brave.browser"
-                    else -> null // System Default
+        if (isStandalone) {
+            try {
+                val webViewIntent = Intent(androidContext, Class.forName("com.foss.appdock.shared.platform.WebViewActivity")).apply {
+                    putExtra("url", url)
+                    putExtra("isIncognito", isIncognito)
+                    putExtra("isIsolated", isIsolated)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
-
-        if (packageName != null) {
-            intent.setPackage(packageName)
+                androidContext.startActivity(webViewIntent)
+                return true
+            } catch (e: Exception) {
+                // Fallback inside BrowserLauncher continues below
+            }
         }
 
         return try {
             androidContext.startActivity(intent)
             true
         } catch (e: Exception) {
-            // Fallback to system default if package launch fails
             if (packageName != null) {
                 intent.setPackage(null)
                 try {

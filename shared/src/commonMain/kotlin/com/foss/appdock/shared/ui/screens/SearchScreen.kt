@@ -23,6 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.foss.appdock.shared.domain.WebApp
+import com.foss.appdock.shared.platform.VerticalScrollbar
+import com.foss.appdock.shared.platform.platformIsAndroid
 import com.foss.appdock.shared.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,6 +41,7 @@ fun SearchScreen(
         var query by remember { mutableStateOf("") }
         var selectedCategory by remember { mutableStateOf<String?>(null) }
         val focusRequester = remember { FocusRequester() }
+        val listState = androidx.compose.foundation.lazy.rememberLazyListState()
 
         val results =
                 webApps.filter { app ->
@@ -64,17 +67,18 @@ fun SearchScreen(
                 }
         ) {
                 Column(
-                        modifier =
-                                Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 24.dp)
+                        modifier = Modifier.fillMaxSize().padding(vertical = 24.dp)
                 ) {
-                        DockPageHeader(title = "Search", onBack = onBack)
+                        Box(modifier = Modifier.padding(horizontal = if (platformIsAndroid) 16.dp else 24.dp)) {
+                                DockPageHeader(title = "Search", onBack = onBack)
+                        }
                         // M3 OutlinedTextField search input
                         OutlinedTextField(
                                 value = query,
                                 onValueChange = { query = it },
                                 modifier =
                                         Modifier.fillMaxWidth()
-                                                .padding(horizontal = 24.dp, vertical = 8.dp)
+                                                .padding(horizontal = if (platformIsAndroid) 16.dp else 24.dp, vertical = 8.dp)
                                                 .focusRequester(focusRequester),
                                 placeholder = {
                                         Text(
@@ -127,7 +131,7 @@ fun SearchScreen(
                                         modifier =
                                                 Modifier.fillMaxWidth()
                                                         .padding(
-                                                                horizontal = 24.dp,
+                                                                horizontal = if (platformIsAndroid) 16.dp else 24.dp,
                                                                 vertical = 8.dp
                                                         ),
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -243,125 +247,126 @@ fun SearchScreen(
                                                 style = MaterialTheme.typography.labelSmall,
                                                 fontWeight = FontWeight.Bold,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier =
-                                                        Modifier.padding(
-                                                                horizontal = 24.dp,
-                                                                vertical = 8.dp
-                                                        )
+                                                modifier = Modifier.padding(horizontal = if (platformIsAndroid) 16.dp else 24.dp, vertical = 8.dp)
                                         )
                                 }
-                                LazyColumn(
-                                        modifier =
-                                                Modifier.fillMaxWidth()
-                                                        .weight(1f)
-                                                        .padding(horizontal = 24.dp),
-                                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                                        contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp)
-                                ) {
-                                        items(results) { app ->
-                                                AppListItem(
-                                                        app = app,
-                                                        onClick = { onAppClick(app) }
-                                                )
-                                        }
+                                Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                                        LazyColumn(
+                                                state = listState,
+                                                modifier = Modifier.fillMaxSize(),
+                                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                                contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp, start = if (platformIsAndroid) 16.dp else 24.dp, end = if (platformIsAndroid) 16.dp else 24.dp)
+                                        ) {
+                                                items(results) { app ->
+                                                        AppListItem(
+                                                                app = app,
+                                                                onClick = { onAppClick(app) }
+                                                        )
+                                                }
 
-                                        item {
-                                                Spacer(Modifier.height(16.dp))
-                                                Surface(
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        shape = RoundedCornerShape(16.dp),
-                                                        color = adaptiveSurfaceVariantBackground(),
-                                                        border =
-                                                                androidx.compose.foundation
-                                                                        .BorderStroke(
-                                                                                1.dp,
-                                                                                adaptiveSurfaceVariantBorder()
-                                                                        )
-                                                ) {
-                                                        Column(
-                                                                modifier =
-                                                                        Modifier.fillMaxWidth()
-                                                                                .padding(24.dp),
-                                                                horizontalAlignment =
-                                                                        Alignment
-                                                                                .CenterHorizontally,
-                                                                verticalArrangement =
-                                                                        Arrangement.spacedBy(8.dp)
-                                                        ) {
-                                                                Surface(
-                                                                        shape =
-                                                                                RoundedCornerShape(
-                                                                                        16.dp
-                                                                                ),
-                                                                        color =
-                                                                                MaterialTheme
-                                                                                        .colorScheme
-                                                                                        .surfaceVariant,
-                                                                        modifier =
-                                                                                Modifier.size(48.dp)
-                                                                ) {
-                                                                        Box(
-                                                                                contentAlignment =
-                                                                                        Alignment
-                                                                                                .Center,
-                                                                                modifier =
-                                                                                        Modifier.fillMaxSize()
-                                                                        ) {
-                                                                                Icon(
-                                                                                        Icons.Filled
-                                                                                                .Add,
-                                                                                        null,
-                                                                                        tint =
-                                                                                                MaterialTheme
-                                                                                                        .colorScheme
-                                                                                                        .primary,
-                                                                                        modifier =
-                                                                                                Modifier.size(
-                                                                                                        24.dp
-                                                                                                )
+                                                item {
+                                                        Spacer(Modifier.height(16.dp))
+                                                        Surface(
+                                                                modifier = Modifier.fillMaxWidth(),
+                                                                shape = RoundedCornerShape(16.dp),
+                                                                color = adaptiveSurfaceVariantBackground(),
+                                                                border =
+                                                                        androidx.compose.foundation
+                                                                                .BorderStroke(
+                                                                                        1.dp,
+                                                                                        adaptiveSurfaceVariantBorder()
                                                                                 )
-                                                                        }
-                                                                }
-                                                                Text(
-                                                                        "Can't find your app?",
-                                                                        style =
-                                                                                MaterialTheme
-                                                                                        .typography
-                                                                                        .titleMedium,
-                                                                        fontWeight =
-                                                                                FontWeight.SemiBold,
-                                                                        color = adaptiveOnSurface()
-                                                                )
-                                                                Text(
-                                                                        "Add a custom URL to dock any web service.",
-                                                                        style =
-                                                                                MaterialTheme
-                                                                                        .typography
-                                                                                        .bodySmall,
-                                                                        color =
-                                                                                MaterialTheme
-                                                                                        .colorScheme
-                                                                                        .onSurfaceVariant,
-                                                                        textAlign = TextAlign.Center
-                                                                )
-                                                                Button(
-                                                                        onClick = onAddAppClick,
-                                                                        shape =
-                                                                                RoundedCornerShape(
-                                                                                        12.dp
-                                                                                ),
-                                                                        colors =
-                                                                                ButtonDefaults
-                                                                                        .buttonColors(
-                                                                                                containerColor =
+                                                        ) {
+                                                                Column(
+                                                                        modifier =
+                                                                                Modifier.fillMaxWidth()
+                                                                                        .padding(24.dp),
+                                                                        horizontalAlignment =
+                                                                                Alignment
+                                                                                        .CenterHorizontally,
+                                                                        verticalArrangement =
+                                                                                Arrangement.spacedBy(8.dp)
+                                                                ) {
+                                                                        Surface(
+                                                                                shape =
+                                                                                        RoundedCornerShape(
+                                                                                                16.dp
+                                                                                        ),
+                                                                                color =
+                                                                                        MaterialTheme
+                                                                                                .colorScheme
+                                                                                                .surfaceVariant,
+                                                                                modifier =
+                                                                                        Modifier.size(48.dp)
+                                                                        ) {
+                                                                                Box(
+                                                                                        contentAlignment =
+                                                                                                Alignment
+                                                                                                        .Center,
+                                                                                        modifier =
+                                                                                                Modifier.fillMaxSize()
+                                                                                ) {
+                                                                                        Icon(
+                                                                                                Icons.Filled
+                                                                                                        .Add,
+                                                                                                null,
+                                                                                                tint =
                                                                                                         MaterialTheme
                                                                                                                 .colorScheme
-                                                                                                                .primary
+                                                                                                                .primary,
+                                                                                                modifier =
+                                                                                                        Modifier.size(
+                                                                                                                24.dp
+                                                                                                        )
                                                                                         )
-                                                                ) { Text("Add Custom URL") }
+                                                                                }
+                                                                        }
+                                                                        Text(
+                                                                                "Can't find your app?",
+                                                                                style =
+                                                                                        MaterialTheme
+                                                                                                .typography
+                                                                                                .titleMedium,
+                                                                                fontWeight =
+                                                                                        FontWeight.SemiBold,
+                                                                                color = adaptiveOnSurface()
+                                                                        )
+                                                                        Text(
+                                                                                "Add a custom URL to dock any web service.",
+                                                                                style =
+                                                                                        MaterialTheme
+                                                                                                .typography
+                                                                                                .bodySmall,
+                                                                                color =
+                                                                                        MaterialTheme
+                                                                                                .colorScheme
+                                                                                                .onSurfaceVariant,
+                                                                                textAlign = TextAlign.Center
+                                                                        )
+                                                                        Button(
+                                                                                onClick = onAddAppClick,
+                                                                                shape =
+                                                                                        RoundedCornerShape(
+                                                                                                12.dp
+                                                                                        ),
+                                                                                colors =
+                                                                                        ButtonDefaults
+                                                                                                .buttonColors(
+                                                                                                        containerColor =
+                                                                                                                MaterialTheme
+                                                                                                                        .colorScheme
+                                                                                                                        .primary
+                                                                                                )
+                                                                        ) { Text("Add Custom URL") }
+                                                                }
                                                         }
                                                 }
                                         }
+
+                                        VerticalScrollbar(
+                                                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                                                listState = listState
+                                        )
                                 }
                         }
                 }

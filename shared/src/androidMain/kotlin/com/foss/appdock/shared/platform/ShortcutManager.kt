@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class AndroidShortcutManager(private val context: Context) : ShortcutManager {
+    @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
     override fun createShortcut(app: WebApp) {
         if (!ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
             return
@@ -22,41 +23,8 @@ class AndroidShortcutManager(private val context: Context) : ShortcutManager {
 
         GlobalScope.launch(Dispatchers.IO) {
             val intent =
-                    Intent(Intent.ACTION_VIEW, Uri.parse(app.url)).apply {
-                        // Apply advanced flags if supported by known browsers
-                        val browserLower = app.browserChoice?.lowercase() ?: ""
-                        if (app.incognitoMode) {
-                            when {
-                                browserLower.contains("chrome") -> {
-                                    putExtra(
-                                            "com.google.android.apps.chrome.EXTRA_IS_INCOGNITO",
-                                            true
-                                    )
-                                }
-                                browserLower.contains("firefox") -> {
-                                    putExtra("private_browsing_mode", true)
-                                }
-                                else -> {
-                                    putExtra("android.support.customtabs.extra.INCOGNITO", true)
-                                }
-                            }
-                        }
-
-                        if (!app.browserChoice.isNullOrEmpty() &&
-                                        app.browserChoice != "System Default"
-                        ) {
-                            val packageName =
-                                    when {
-                                        browserLower.contains("chrome") -> "com.android.chrome"
-                                        browserLower.contains("firefox") -> "org.mozilla.firefox"
-                                        browserLower.contains("edge") -> "com.microsoft.emmx"
-                                        browserLower.contains("brave") -> "com.brave.browser"
-                                        else -> null
-                                    }
-                            if (packageName != null) {
-                                setPackage(packageName)
-                            }
-                        }
+                    Intent(Intent.ACTION_VIEW, Uri.parse("appdock://launch?id=${app.id}")).apply {
+                        setClassName(context.packageName, "com.foss.appdock.MainActivity")
                     }
 
             val iconCompat =
@@ -67,19 +35,13 @@ class AndroidShortcutManager(private val context: Context) : ShortcutManager {
                             if (bitmap != null) {
                                 IconCompat.createWithBitmap(bitmap)
                             } else {
-                                IconCompat.createWithResource(
-                                        context,
-                                        android.R.drawable.ic_menu_compass
-                                )
+                                IconCompat.createWithResource(context, context.applicationInfo.icon)
                             }
                         } catch (e: Exception) {
-                            IconCompat.createWithResource(
-                                    context,
-                                    android.R.drawable.ic_menu_compass
-                            )
+                            IconCompat.createWithResource(context, context.applicationInfo.icon)
                         }
                     } else {
-                        IconCompat.createWithResource(context, android.R.drawable.ic_menu_compass)
+                        IconCompat.createWithResource(context, context.applicationInfo.icon)
                     }
 
             val shortcutInfo =

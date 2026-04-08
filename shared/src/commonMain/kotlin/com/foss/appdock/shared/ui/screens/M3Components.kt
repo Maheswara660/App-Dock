@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.foss.appdock.shared.domain.WebApp
+import com.foss.appdock.shared.platform.platformIsDesktop
 import com.foss.appdock.shared.ui.theme.adaptiveOnSurface
 import com.foss.appdock.shared.ui.theme.adaptiveSurfaceVariantBackground
 import com.foss.appdock.shared.ui.theme.adaptiveSurfaceVariantBorder
@@ -271,14 +272,6 @@ fun M3DangerDialog(
 ) {
         AlertDialog(
                 onDismissRequest = onDismiss,
-                icon = {
-                        Icon(
-                                imageVector =
-                                        Icons.AutoMirrored.Filled.ArrowBack, // placeholder shape
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error
-                        )
-                },
                 title = { Text(title, style = MaterialTheme.typography.headlineSmall) },
                 text = {
                         Text(
@@ -494,7 +487,7 @@ fun SwipeableAppListItem(
                 val density = LocalDensity.current
                 val revealThresholdDp = with(density) { revealThreshold.toDp() }
 
-                if (!com.foss.appdock.shared.platform.platformIsDesktop) {
+                if (!platformIsDesktop) {
                         Box(modifier = Modifier.matchParentSize().alpha(swipeProgress)) {
                                 Row(modifier = Modifier.matchParentSize()) {
                                         Box(
@@ -561,7 +554,7 @@ fun SwipeableAppListItem(
                 Box(
                         modifier =
                                 Modifier.offset { IntOffset(animatedOffset.roundToInt(), 0) }.let {
-                                        if (com.foss.appdock.shared.platform.platformIsDesktop) {
+                                        if (!platformIsDesktop) {
                                                 it.pointerInput(Unit) {
                                                         detectHorizontalDragGestures(
                                                                 onDragEnd = {
@@ -645,11 +638,21 @@ fun SwipeableAppListItem(
                                                         contentAlignment = Alignment.Center
                                                 ) {
                                                         if (!app.iconPath.isNullOrBlank()) {
+                                                                val iconResPath = app.iconPath
+                                                                val resolvedPath = if (
+                                                                        iconResPath.startsWith("http") || 
+                                                                        iconResPath.startsWith("data:") || 
+                                                                        iconResPath.startsWith("file://")
+                                                                ) {
+                                                                        iconResPath
+                                                                } else {
+                                                                        "file:///${iconResPath.replace("\\", "/")}"
+                                                                }
                                                                 io.kamel.image.KamelImage(
                                                                         resource =
                                                                                 io.kamel.image
                                                                                         .asyncPainterResource(
-                                                                                                app.iconPath
+                                                                                                resolvedPath
                                                                                         ),
                                                                         contentDescription =
                                                                                 "${app.name} icon",
@@ -706,7 +709,7 @@ fun SwipeableAppListItem(
                                                         )
                                                 }
                                         }
-                                        if (com.foss.appdock.shared.platform.platformIsDesktop) {
+                                        if (platformIsDesktop) {
                                                 var expanded by remember { mutableStateOf(false) }
                                                 Box(
                                                         modifier = Modifier.padding(8.dp),
@@ -789,21 +792,6 @@ fun SwipeableAppListItem(
                                                                         }
                                                                 )
                                                         }
-                                                }
-                                        } else {
-                                                Box(
-                                                        modifier = Modifier.padding(8.dp),
-                                                        contentAlignment = Alignment.Center
-                                                ) {
-                                                        Icon(
-                                                                imageVector = Icons.Filled.MoreVert,
-                                                                contentDescription =
-                                                                        "Swipe to options",
-                                                                tint =
-                                                                        MaterialTheme.colorScheme
-                                                                                .onSurfaceVariant,
-                                                                modifier = Modifier.size(24.dp)
-                                                        )
                                                 }
                                         }
                                 }

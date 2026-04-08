@@ -11,6 +11,8 @@ capture/
 *.iml
 *.iws
 out/
+.editorconfig
+*.ipr
 
 # VS Code
 .vscode/
@@ -23,13 +25,32 @@ captures/
 *.apk
 *.ap_
 *.dex
+androidApp/release/
+androidApp/release-keystore.jks
 
 # Compose Desktop / Multiplatform
 /desktopApp/build/
 /shared/build/
 /androidApp/build/
 composeApp/build/
+
+# macOS
 .DS_Store
+**/.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+Network Trash Folder
+Temporary Items
+.fseventsd
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+*.lnk
 
 # iOS / Kotlin Multiplatform Mobile
 iosApp/Podfile.lock
@@ -39,9 +60,13 @@ iosApp.xcodeproj/
 !iosApp.xcodeproj/project.pbxproj
 shared/shared.podspec
 
-# OS Specific
-Thumbs.db
-desktop.ini
+# Desktop Web Engines (CEF / KCEF)
+kcef-bundle/
+kcef-bundle*/
+jcef-bundle/
+jcef/
+CEF/
+hs_err_pid*
 
 # Temporary files
 *.tmp
@@ -49,6 +74,12 @@ desktop.ini
 *~
 *.swp
 *.log
+build_error.log
+
+# Project specific
+PKGBUILD_template
+releases/
+artifacts/
 
 # Project specific templates/local files
 PKGBUILD_template

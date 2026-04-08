@@ -21,6 +21,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.foss.appdock.shared.domain.WebApp
 import com.foss.appdock.shared.platform.ImagePicker
+import com.foss.appdock.shared.platform.VerticalScrollbar
+import com.foss.appdock.shared.platform.platformIsAndroid
 import com.foss.appdock.shared.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,13 +46,16 @@ fun WebAppDetailsScreen(
         var showDeleteDialog by remember { mutableStateOf(false) }
         var showIconUrlDialog by remember { mutableStateOf(false) }
 
+        val scrollState = rememberScrollState()
+
         AppScaffold(snackbarHostState = snackbarHostState, bottomBar = {}) {
-                Column(
-                        modifier =
-                                Modifier.fillMaxSize()
-                                        .padding(horizontal = 16.dp)
-                                        .verticalScroll(rememberScrollState())
-                ) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                        Column(
+                                modifier =
+                                        Modifier.fillMaxSize()
+                                                .padding(horizontal = 16.dp)
+                                                .verticalScroll(scrollState)
+                        ) {
                         // ── Header ─────────────────────────────────────────────────────────────
                         Row(
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
@@ -133,11 +138,21 @@ fun WebAppDetailsScreen(
                                                                         else ""
                                                                 }
                                                 if (derivedIconUrl.isNotBlank()) {
+                                                        val resolvedPath = if (
+                                                                derivedIconUrl.startsWith("http") || 
+                                                                derivedIconUrl.startsWith("data:") || 
+                                                                derivedIconUrl.startsWith("file://")
+                                                        ) {
+                                                                derivedIconUrl
+                                                        } else {
+                                                                "file:///${derivedIconUrl.replace("\\", "/")}"
+                                                        }
+
                                                         io.kamel.image.KamelImage(
                                                                 resource =
                                                                         io.kamel.image
                                                                                 .asyncPainterResource(
-                                                                                        derivedIconUrl
+                                                                                        resolvedPath
                                                                                 ),
                                                                 contentDescription =
                                                                         "${app.name} icon",
@@ -265,42 +280,44 @@ fun WebAppDetailsScreen(
                         Spacer(Modifier.height(20.dp))
 
                         // ── Preferences ──────────────────────────────────────────────────
-                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                                M3SectionHeader("Preferences")
-                                Spacer(Modifier.height(8.dp))
-                                Column(
-                                        modifier =
-                                                Modifier.fillMaxWidth()
-                                                        .clip(RoundedCornerShape(16.dp))
-                                                        .background(
-                                                                adaptiveSurfaceVariantBackground()
-                                                        )
-                                                        .border(
-                                                                1.dp,
-                                                                adaptiveSurfaceVariantBorder(),
-                                                                RoundedCornerShape(16.dp)
-                                                        )
-                                                        .padding(16.dp),
-                                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                                ) {
-                                        AdvancedSettingToggle(
-                                                title = "Native-like Window",
-                                                subtitle = "Hide browser address bar and controls",
-                                                checked = isStandalone,
-                                                onCheckedChange = { isStandalone = it }
-                                        )
-                                        AdvancedSettingToggle(
-                                                title = "Isolated Profile",
-                                                subtitle = "Separate browser profile for this app",
-                                                checked = isolatedProfile,
-                                                onCheckedChange = { isolatedProfile = it }
-                                        )
-                                        AdvancedSettingToggle(
-                                                title = "Incognito Mode",
-                                                subtitle = "Open app in a private browsing window",
-                                                checked = incognitoMode,
-                                                onCheckedChange = { incognitoMode = it }
-                                        )
+                        if (!platformIsAndroid) {
+                                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                                        M3SectionHeader("Preferences")
+                                        Spacer(Modifier.height(8.dp))
+                                        Column(
+                                                modifier =
+                                                        Modifier.fillMaxWidth()
+                                                                .clip(RoundedCornerShape(16.dp))
+                                                                .background(
+                                                                        adaptiveSurfaceVariantBackground()
+                                                                )
+                                                                .border(
+                                                                        1.dp,
+                                                                        adaptiveSurfaceVariantBorder(),
+                                                                        RoundedCornerShape(16.dp)
+                                                                )
+                                                                .padding(16.dp),
+                                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                                        ) {
+                                                AdvancedSettingToggle(
+                                                        title = "Native-like Window",
+                                                        subtitle = "Hide browser address bar and controls",
+                                                        checked = isStandalone,
+                                                        onCheckedChange = { isStandalone = it }
+                                                )
+                                                AdvancedSettingToggle(
+                                                        title = "Isolated Profile",
+                                                        subtitle = "Separate browser profile for this app",
+                                                        checked = isolatedProfile,
+                                                        onCheckedChange = { isolatedProfile = it }
+                                                )
+                                                AdvancedSettingToggle(
+                                                        title = "Incognito Mode",
+                                                        subtitle = "Open app in a private browsing window",
+                                                        checked = incognitoMode,
+                                                        onCheckedChange = { incognitoMode = it }
+                                                )
+                                        }
                                 }
                         }
 
@@ -363,6 +380,12 @@ fun WebAppDetailsScreen(
                         }
 
                         Spacer(Modifier.height(32.dp))
+                        }
+
+                        VerticalScrollbar(
+                                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                                scrollState = scrollState
+                        )
                 }
         }
 

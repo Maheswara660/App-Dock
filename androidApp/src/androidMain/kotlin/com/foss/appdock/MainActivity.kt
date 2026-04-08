@@ -22,6 +22,8 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
 
+        handleIntent(intent, browserLauncher, databaseHelper)
+
         setContent {
             AndroidMainView(
                     settingsFactory = settingsFactory,
@@ -30,6 +32,26 @@ class MainActivity : ComponentActivity() {
                     browserLauncher = browserLauncher,
                     onExitApp = { finish() }
             )
+        }
+    }
+
+    private fun handleIntent(
+            intent: android.content.Intent?,
+            browserLauncher: com.foss.appdock.shared.platform.BrowserLauncher,
+            databaseHelper: DatabaseHelper
+    ) {
+        val data = intent?.data ?: return
+        if (data.scheme == "appdock" && data.host == "launch") {
+            val appId = data.getQueryParameter("id")?.toLongOrNull() ?: return
+            val app = databaseHelper.getWebAppById(appId) ?: return
+            browserLauncher.openUrlInBrowser(
+                    url = app.url,
+                    browserName = app.browserChoice,
+                    isIncognito = app.incognitoMode,
+                    isStandalone = app.isStandalone,
+                    isIsolated = app.isolatedProfile
+            )
+            finish()
         }
     }
 }

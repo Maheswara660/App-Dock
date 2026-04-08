@@ -19,6 +19,7 @@ import com.foss.appdock.shared.ui.theme.AppDockTheme
 import com.foss.appdock.shared.utils.getSystemTimeMillis
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun App(
@@ -220,29 +221,6 @@ fun App(
                                                 snackbarHostState = snackbarHostState
                                         )
 
-                                        appToDelete?.let { app ->
-                                                M3DangerDialog(
-                                                        title = "Delete ${app.name}?",
-                                                        text =
-                                                                "Are you sure you want to delete this app?",
-                                                        confirmText = "Delete",
-                                                        onConfirm = {
-                                                                coroutineScope.launch {
-                                                                        shortcutManager
-                                                                                .deleteShortcut(app)
-                                                                        databaseHelper.deleteWebApp(
-                                                                                app.id
-                                                                        )
-                                                                        snackbarHostState
-                                                                                .showSnackbar(
-                                                                                        "Deleted ${app.name}"
-                                                                                )
-                                                                }
-                                                                appToDelete = null
-                                                        },
-                                                        onDismiss = { appToDelete = null }
-                                                )
-                                        }
                                 }
                                 is Screen.Search ->
                                         SearchScreen(
@@ -338,18 +316,13 @@ fun App(
                                                                                 SnackbarDuration
                                                                                         .Short
                                                                 )
-                                                                shortcutManager.createShortcut(
-                                                                        newApp
-                                                                )
-                                                                lastAddedApp = newApp
+                                                                shortcutManager.createShortcut(newApp)
+                                                                
+                                                                withContext(Dispatchers.Main) {
+                                                                        popToDashboard()
+                                                                        push(Screen.AppAdded(newApp))
+                                                                }
                                                         }
-                                                        // Ideally wait for coroutine, but UI is
-                                                        // eager:
-                                                        lastAddedApp?.let {
-                                                                popToDashboard()
-                                                                push(Screen.AppAdded(it))
-                                                        }
-                                                                ?: run { popToDashboard() }
                                                 }
                                         )
                                 is Screen.AppAdded ->
@@ -528,6 +501,23 @@ fun App(
                                                 onTabSelected = onTabSelected,
                                                 snackbarHostState = snackbarHostState
                                         )
+                        }
+
+                        appToDelete?.let { app ->
+                                M3DangerDialog(
+                                        title = "Delete ${app.name}?",
+                                        text = "Are you sure you want to delete this app?",
+                                        confirmText = "Delete",
+                                        onConfirm = {
+                                                coroutineScope.launch {
+                                                        shortcutManager.deleteShortcut(app)
+                                                        databaseHelper.deleteWebApp(app.id)
+                                                        snackbarHostState.showSnackbar("Deleted ${app.name}")
+                                                }
+                                                appToDelete = null
+                                        },
+                                        onDismiss = { appToDelete = null }
+                                )
                         }
                 }
         }

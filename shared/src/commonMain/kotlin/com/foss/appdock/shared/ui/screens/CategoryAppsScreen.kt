@@ -5,11 +5,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.foss.appdock.shared.data.DatabaseHelper
 import com.foss.appdock.shared.domain.Category
 import com.foss.appdock.shared.domain.WebApp
+import com.foss.appdock.shared.platform.VerticalScrollbar
 
 @Composable
 fun CategoryAppsScreen(
@@ -48,34 +50,47 @@ fun CategoryAppsScreen(
                 )
             }
     ) {
-        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 24.dp)) {
-            DockPageHeader(title = category.name, onBack = onBack)
+        Column(modifier = Modifier.fillMaxSize().padding(vertical = 24.dp)) {
+            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
+                DockPageHeader(title = category.name, onBack = onBack)
 
-            Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(24.dp))
 
-            SortDropdownList(currentSort = sortOrder, onSortChanged = { sortOrder = it })
+                SortDropdownList(currentSort = sortOrder, onSortChanged = { sortOrder = it })
 
-            Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(16.dp))
+            }
 
             if (categoryApps.isEmpty()) {
-                EmptyState(
+                Box(modifier = Modifier.padding(horizontal = 24.dp)) {
+                    EmptyState(
                         title = "No apps in this category",
                         subtitle = "Add web apps here to keep your collection organized."
-                )
+                    )
+                }
             } else {
-                LazyColumn(
-                        modifier = Modifier.weight(1f).fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        contentPadding = PaddingValues(bottom = 90.dp)
-                ) {
-                    items(categoryApps, key = { it.id }) { app ->
-                        SwipeableAppListItem(
-                                app = app,
-                                onClick = { onAppClick(app) },
-                                onDelete = { onAppDelete(app) },
-                                onEdit = { onAppEdit(app) }
-                        )
+                val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+                Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                    LazyColumn(
+                            state = listState,
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(bottom = 90.dp, start = 24.dp, end = 24.dp)
+                    ) {
+                        items(categoryApps, key = { it.id }) { app ->
+                            SwipeableAppListItem(
+                                    app = app,
+                                    onClick = { onAppClick(app) },
+                                    onDelete = { onAppDelete(app) },
+                                    onEdit = { onAppEdit(app) }
+                            )
+                        }
                     }
+
+                    VerticalScrollbar(
+                            modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                            listState = listState
+                    )
                 }
             }
         }

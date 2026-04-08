@@ -22,6 +22,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.foss.appdock.shared.platform.platformIsAndroid
 import com.foss.appdock.shared.ui.theme.*
 
 // ── Bottom Nav Tab definitions ─────────────────────────────────────────────────
@@ -111,20 +112,20 @@ fun BottomNavBar(
                         }
 
                         // Center FAB (Add App / Add Category)
-                        Box(
-                                modifier =
-                                        Modifier.size(56.dp)
-                                                .clip(CircleShape)
-                                                .shadow(elevation = 8.dp, shape = CircleShape)
-                                                .background(MaterialTheme.colorScheme.primary)
-                                                .clickable { onFabClick() },
-                                contentAlignment = Alignment.Center
+                        val fabSize = 56.dp
+                        val fabIconSize = 28.dp
+
+                        FloatingActionButton(
+                                onClick = onFabClick,
+                                shape = CircleShape,
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(fabSize)
                         ) {
                                 Icon(
-                                        imageVector = Icons.Filled.Add,
-                                        contentDescription = "Add",
-                                        tint = Color.White,
-                                        modifier = Modifier.size(28.dp)
+                                        Icons.Filled.Add,
+                                        contentDescription = "Add Web App",
+                                        modifier = Modifier.size(fabIconSize)
                                 )
                         }
 
@@ -164,9 +165,12 @@ private fun NavItemIcon(item: NavItem, isSelected: Boolean, onClick: () -> Unit,
                         MaterialTheme.colorScheme.onSurfaceVariant
                 }
 
+        val iconSize = 24.dp
+        val navItemSize = 48.dp
+
         Box(
                 modifier =
-                        Modifier.size(48.dp)
+                        Modifier.size(navItemSize)
                                 .clip(CircleShape)
                                 .background(containerColor)
                                 .clickable(onClick = onClick),
@@ -176,7 +180,7 @@ private fun NavItemIcon(item: NavItem, isSelected: Boolean, onClick: () -> Unit,
                         imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
                         contentDescription = item.label,
                         tint = iconColor,
-                        modifier = Modifier.size(24.dp).scale(scale)
+                        modifier = Modifier.size(iconSize).scale(scale)
                 )
         }
 }

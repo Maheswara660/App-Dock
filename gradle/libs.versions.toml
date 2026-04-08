@@ -35,6 +35,7 @@ androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx
 multiplatform-settings = { module = "com.russhwolf:multiplatform-settings", version.ref = "multiplatformSettings" }
 kamel-image = { module = "media.kamel:kamel-image", version = "0.9.3" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version = "2.0.12" }
+compose-webview-multiplatform = { module = "io.github.kevinnzou:compose-webview-multiplatform", version = "1.9.40" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

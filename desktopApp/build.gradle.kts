@@ -13,6 +13,7 @@ kotlin {
             dependencies {
                 implementation(compose.desktop.currentOs)
                 implementation(project(":shared"))
+                implementation(libs.compose.webview.multiplatform)
             }
         }
     }
@@ -24,19 +25,42 @@ compose.desktop {
 
         nativeDistributions {
             // macOS: TargetFormat.Dmg, TargetFormat.Pkg
-            // Linux: TargetFormat.Deb, TargetFormat.Rpm, TargetFormat.AppImage
+            // Linux: TargetFormat.Deb, TargetFormat.Rpm
             // Windows: TargetFormat.Exe, TargetFormat.Msi
             // Note: .pacman is not natively supported by Compose Multiplatform (jpackage).
-            // A common workaround for Arch Linux is to build a .deb or AppImage and use AUR / PKGBUILD.
-            targetFormats(
+            // A common workaround for Arch Linux is to build a .deb and use AUR / PKGBUILD.
+            val currentOs = System.getProperty("os.name").toLowerCase()
+            val availableFormats = mutableListOf(
+                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Dmg,
+                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Pkg,
                 org.jetbrains.compose.desktop.application.dsl.TargetFormat.Exe,
                 org.jetbrains.compose.desktop.application.dsl.TargetFormat.Msi,
                 org.jetbrains.compose.desktop.application.dsl.TargetFormat.Deb,
-                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Rpm,
-                org.jetbrains.compose.desktop.application.dsl.TargetFormat.AppImage
+                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Rpm
             )
+            if (currentOs.contains("linux")) {
+                availableFormats.add(org.jetbrains.compose.desktop.application.dsl.TargetFormat.AppImage)
+            }
+            targetFormats(*availableFormats.toTypedArray())
             packageName = "App Dock"
-            packageVersion = "1.0.0"
+            packageVersion = "1.1.0"
+            vendor = "AppDock"
+            description = "App Dock - Modern Web App Manager"
+            copyright = "© 2024 AppDock"
+            
+            modules("java.sql")
+
+            windows {
+                shortcut = true
+                menu = true
+                iconFile.set(project.file("src/desktopMain/resources/icon.ico"))
+                upgradeUuid = "a3b8d1b6-0b3b-4b1a-9c1a-1a2b3c4d5e6f" // Consistent UUID for upgrades
+            }
+
+            macOS {
+                bundleID = "com.foss.appdock"
+                iconFile.set(project.file("src/desktopMain/resources/myicon.icns"))
+            }
         }
     }
 }

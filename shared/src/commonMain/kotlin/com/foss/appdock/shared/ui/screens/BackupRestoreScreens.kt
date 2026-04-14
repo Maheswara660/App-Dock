@@ -22,43 +22,57 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import com.foss.appdock.shared.data.DatabaseHelper
 import com.foss.appdock.shared.domain.WebApp
 import com.foss.appdock.shared.platform.VerticalScrollbar
 import com.foss.appdock.shared.platform.exportData
 import com.foss.appdock.shared.platform.importData
-import com.foss.appdock.shared.ui.theme.adaptiveOnSurface
-import com.foss.appdock.shared.ui.theme.adaptiveSurfaceVariantBackground
-import com.foss.appdock.shared.ui.theme.adaptiveSurfaceVariantBorder
 import kotlinx.coroutines.launch
 
 @Composable
-fun ExportScreen(databaseHelper: DatabaseHelper, onBack: () -> Unit, snackbarHostState: SnackbarHostState) {
+@Suppress("UNUSED_PARAMETER")
+fun ExportScreen(
+    databaseHelper: DatabaseHelper,
+    onBack: () -> Unit,
+    snackbarHostState: SnackbarHostState,
+    onShowFlyout: (String, ImageVector) -> Unit = { _, _ -> }
+) {
         val webApps by databaseHelper.getAllWebApps().collectAsState(emptyList())
         var selectedApps by remember { mutableStateOf(setOf<Long>()) }
         val scope = rememberCoroutineScope()
 
-        AppScaffold(
-                snackbarHostState = snackbarHostState,
-                bottomBar = {
-                        BottomNavBar(
-                                selectedTab = BottomNavTab.SETTINGS,
-                                onTabSelected = { /* Handle navigation if needed */},
-                                onFabClick = {}
-                        )
-                }
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
                 val scrollState = rememberScrollState()
-                Box(modifier = Modifier.fillMaxSize()) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                        // ── Header bar ────────────────────────────────────────────────────
+                        Surface(color = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
+                                Column {
+                                        Row(
+                                                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                                IconButton(onClick = onBack) {
+                                                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                                                }
+                                                Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
+                                                        Text("Export Data", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                                        Text("Save your apps to a backup file", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                }
+                                        }
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                }
+                        }
+
+                        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                         Column(
                                 modifier =
                                         Modifier.fillMaxSize()
-                                                .padding(horizontal = 24.dp, vertical = 24.dp)
+                                                .padding(horizontal = 24.dp, vertical = 16.dp)
                                                 .verticalScroll(scrollState)
                         ) {
-                                DockPageHeader(title = "Export Data", onBack = onBack)
-
-                                Spacer(Modifier.height(32.dp))
 
                                 Text(
                                         "Select the apps you want to export. The data will be saved as a JSON file.",
@@ -78,7 +92,7 @@ fun ExportScreen(databaseHelper: DatabaseHelper, onBack: () -> Unit, snackbarHos
                                                 "Apps (${webApps.size})",
                                                 style = MaterialTheme.typography.titleMedium,
                                                 fontWeight = FontWeight.Bold,
-                                                color = adaptiveOnSurface()
+                                                color = MaterialTheme.colorScheme.onSurface
                                         )
 
                                         TextButton(
@@ -103,12 +117,12 @@ fun ExportScreen(databaseHelper: DatabaseHelper, onBack: () -> Unit, snackbarHos
 
                                 Surface(
                                         shape = RoundedCornerShape(20.dp),
-                                        color = adaptiveSurfaceVariantBackground(),
+                                        color = MaterialTheme.colorScheme.surface,
                                         modifier =
                                                 Modifier.fillMaxWidth()
                                                         .border(
                                                                 1.dp,
-                                                                adaptiveSurfaceVariantBorder(),
+                                                                MaterialTheme.colorScheme.outlineVariant,
                                                                 RoundedCornerShape(20.dp)
                                                         )
                                 ) {
@@ -123,7 +137,7 @@ fun ExportScreen(databaseHelper: DatabaseHelper, onBack: () -> Unit, snackbarHos
                                                                                         FontWeight
                                                                                                 .Medium,
                                                                                 color =
-                                                                                        adaptiveOnSurface()
+                                                                                        MaterialTheme.colorScheme.onSurface
                                                                         )
                                                                 },
                                                                 supportingContent = {
@@ -183,7 +197,7 @@ fun ExportScreen(databaseHelper: DatabaseHelper, onBack: () -> Unit, snackbarHos
                                                                                                 16.dp
                                                                                 ),
                                                                         color =
-                                                                                adaptiveSurfaceVariantBorder()
+                                                                                MaterialTheme.colorScheme.outlineVariant
                                                                 )
                                                         }
                                                 }
@@ -200,22 +214,16 @@ fun ExportScreen(databaseHelper: DatabaseHelper, onBack: () -> Unit, snackbarHos
                                                                         it.id in selectedApps
                                                                 }
                                                         if (selectedList.isEmpty()) {
-                                                                snackbarHostState.showSnackbar(
-                                                                        "Please select at least one app"
-                                                                )
+                                                                // silenced
                                                                 return@launch
                                                         }
 
                                                         val success =
                                                                 exportData(selectedList)
                                                         if (success) {
-                                                                snackbarHostState.showSnackbar(
-                                                                        "Data exported successfully"
-                                                                )
+                                                                // silenced
                                                         } else {
-                                                                snackbarHostState.showSnackbar(
-                                                                        "Failed to export data"
-                                                                )
+                                                                // silenced
                                                         }
                                                 }
                                         },
@@ -238,67 +246,71 @@ fun ExportScreen(databaseHelper: DatabaseHelper, onBack: () -> Unit, snackbarHos
                 }
         }
 }
+}
 
 @Composable
-fun ImportScreen(databaseHelper: DatabaseHelper, onBack: () -> Unit, onImportComplete: () -> Unit, snackbarHostState: SnackbarHostState) {
+@Suppress("UNUSED_PARAMETER")
+fun ImportScreen(
+    databaseHelper: DatabaseHelper,
+    onBack: () -> Unit,
+    onImportComplete: () -> Unit,
+    onShowFlyout: (String, ImageVector) -> Unit = { _, _ -> }
+) {
         var parsedApps by remember { mutableStateOf(listOf<WebApp>()) }
         var selectedApps by remember { mutableStateOf(setOf<Int>()) }
         val scope = rememberCoroutineScope()
         var isParsing by remember { mutableStateOf(false) }
 
-        AppScaffold(
-                snackbarHostState = snackbarHostState,
-                bottomBar = {
-                        BottomNavBar(
-                                selectedTab = BottomNavTab.SETTINGS,
-                                onTabSelected = { /* Handle navigation if needed */},
-                                onFabClick = {}
-                        )
-                }
-        ) {
-                Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize()) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                        // ── Header bar ────────────────────────────────────────────────────
+                        Surface(color = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
+                                Column {
+                                        Row(
+                                                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                                IconButton(onClick = onBack) {
+                                                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                                                }
+                                                Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
+                                                        Text("Import Data", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                                        Text("Restore apps from a previous backup", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                }
+                                        }
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                }
+                        }
+
+                        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                         Column(
-                                modifier =
-                                        Modifier.fillMaxSize()
-                                                .padding(vertical = 24.dp)
+                                modifier = Modifier.fillMaxSize().padding(vertical = 16.dp)
                         ) {
                                 Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                                        DockPageHeader(title = "Import Data", onBack = onBack)
-
-                                        Spacer(Modifier.height(32.dp))
 
                                         if (parsedApps.isEmpty()) {
+                                                val outlineColor = MaterialTheme.colorScheme.outlineVariant
                                                 Surface(
                                                         shape = RoundedCornerShape(24.dp),
-                                                        color = adaptiveSurfaceVariantBackground(),
-                                                        modifier =
-                                                                Modifier.fillMaxWidth()
-                                                                        .padding(vertical = 16.dp)
-                                                                        .clickable {
-                                                                                scope.launch {
-                                                                                        isParsing = true
-                                                                                        val apps =
-                                                                                                importData()
-                                                                                        if (apps != null) {
-                                                                                                parsedApps =
-                                                                                                        apps
-                                                                                                selectedApps =
-                                                                                                        apps.indices
-                                                                                                                .toSet()
-                                                                                        } else {
-                                                                                                snackbarHostState
-                                                                                                        .showSnackbar(
-                                                                                                                "Failed to import or no file selected"
-                                                                                                        )
-                                                                                        }
-                                                                                        isParsing = false
+                                                        color = MaterialTheme.colorScheme.surface,
+                                                        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
+                                                                .drawBehind { 
+                                                                    drawRoundRect(color = outlineColor, style = Stroke(width = 4f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(20f, 20f), 0f)), cornerRadius = androidx.compose.ui.geometry.CornerRadius(24.dp.toPx())) 
+                                                                }
+                                                                .clip(RoundedCornerShape(24.dp))
+                                                                .clickable {
+                                                                        scope.launch {
+                                                                                isParsing = true
+                                                                                val apps = importData()
+                                                                                if (apps != null) {
+                                                                                        parsedApps = apps
+                                                                                        selectedApps = apps.indices.toSet()
+                                                                                } else {
+                                                                                        // silenced
                                                                                 }
+                                                                                isParsing = false
                                                                         }
-                                                                        .border(
-                                                                                1.dp,
-                                                                                adaptiveSurfaceVariantBorder(),
-                                                                                RoundedCornerShape(24.dp)
-                                                                        )
+                                                                }
                                                 ) {
                                                         Column(
                                                                 modifier = Modifier.padding(32.dp),
@@ -340,7 +352,7 @@ fun ImportScreen(databaseHelper: DatabaseHelper, onBack: () -> Unit, onImportCom
                                                                                 MaterialTheme.typography
                                                                                         .titleMedium,
                                                                         fontWeight = FontWeight.Bold,
-                                                                        color = adaptiveOnSurface()
+                                                                        color = MaterialTheme.colorScheme.onSurface
                                                                 )
 
                                                                 Text(
@@ -417,7 +429,7 @@ fun ImportScreen(databaseHelper: DatabaseHelper, onBack: () -> Unit, onImportCom
                                                                                         .colorScheme
                                                                                         .surfaceVariant
                                                                         else
-                                                                                adaptiveSurfaceVariantBackground(),
+                                                                                MaterialTheme.colorScheme.surface,
                                                                 border =
                                                                         if (isSelected)
                                                                                 androidx.compose.foundation
@@ -431,7 +443,7 @@ fun ImportScreen(databaseHelper: DatabaseHelper, onBack: () -> Unit, onImportCom
                                                                                 androidx.compose.foundation
                                                                                         .BorderStroke(
                                                                                                 1.dp,
-                                                                                                adaptiveSurfaceVariantBorder()
+                                                                                                MaterialTheme.colorScheme.outlineVariant
                                                                                         ),
                                                                 tonalElevation = 0.dp
                                                         ) {
@@ -443,7 +455,7 @@ fun ImportScreen(databaseHelper: DatabaseHelper, onBack: () -> Unit, onImportCom
                                                                                                 FontWeight
                                                                                                         .Medium,
                                                                                         color =
-                                                                                                adaptiveOnSurface()
+                                                                                                MaterialTheme.colorScheme.onSurface
                                                                                 )
                                                                         },
                                                                         supportingContent = {
@@ -513,9 +525,7 @@ fun ImportScreen(databaseHelper: DatabaseHelper, onBack: () -> Unit, onImportCom
                                                                         selectedList.forEach {
                                                                                 databaseHelper.insertWebApp(it)
                                                                         }
-                                                                        snackbarHostState.showSnackbar(
-                                                                                "Imported ${selectedList.size} apps"
-                                                                        )
+                                                                        // silenced
                                                                         onImportComplete()
                                                                         onBack()
                                                                 }
@@ -539,4 +549,5 @@ fun ImportScreen(databaseHelper: DatabaseHelper, onBack: () -> Unit, onImportCom
                         }
                 }
         }
+}
 }

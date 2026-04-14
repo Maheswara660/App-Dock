@@ -2,20 +2,25 @@ package com.foss.appdock.shared
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import com.foss.appdock.shared.data.DatabaseHelper
 import com.foss.appdock.shared.data.DriverFactory
 import com.foss.appdock.shared.platform.BrowserLauncher
 import com.foss.appdock.shared.platform.DesktopShortcutManager
+import com.foss.appdock.shared.platform.LocalAwtWindow
 import com.foss.appdock.shared.settings.SettingsFactory
+import java.awt.Window
 
 @Composable
-fun DesktopMainView() {
+fun DesktopMainView(window: Window? = null) {
     val settingsFactory = SettingsFactory()
     val driverFactory = DriverFactory()
     val databaseHelper = DatabaseHelper(driverFactory)
     val shortcutManager = DesktopShortcutManager()
     val browserLauncher = BrowserLauncher(null)
-    App(settingsFactory, databaseHelper, shortcutManager, browserLauncher)
+    CompositionLocalProvider(LocalAwtWindow provides window) {
+        App(settingsFactory, databaseHelper, shortcutManager, browserLauncher)
+    }
 }
 
 @Preview

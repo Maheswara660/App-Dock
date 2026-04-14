@@ -26,10 +26,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
           cache: 'gradle'
 
@@ -55,21 +55,27 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: AppDock-Linux-${{ github.run_number }}
-          path: desktopApp/build/compose/binaries/main/**/*
+          path: |
+            desktopApp/build/compose/binaries/main/deb/*.deb
+            desktopApp/build/compose/binaries/main/rpm/*.rpm
             
       - name: Upload Windows Artifacts
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
           name: AppDock-Windows-${{ github.run_number }}
-          path: desktopApp/build/compose/binaries/main/**/*
+          path: |
+            desktopApp/build/compose/binaries/main/exe/*.exe
+            desktopApp/build/compose/binaries/main/msi/*.msi
 
       - name: Upload macOS Artifacts
         if: runner.os == 'macOS'
         uses: actions/upload-artifact@v4
         with:
           name: AppDock-macOS-${{ github.run_number }}
-          path: desktopApp/build/compose/binaries/main/**/*
+          path: |
+            desktopApp/build/compose/binaries/main/dmg/*.dmg
+            desktopApp/build/compose/binaries/main/pkg/*.pkg
 
   build-android:
     name: Build Android
@@ -77,10 +83,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
           cache: 'gradle'
 

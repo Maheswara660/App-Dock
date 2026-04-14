@@ -22,15 +22,10 @@ actual fun queryInstalledBrowsers(context: Any?): List<String> {
         val osName = System.getProperty("os.name")?.lowercase() ?: ""
 
         if (osName.contains("linux")) {
-            val directories =
-                    listOf(
-                            File("/usr/share/applications/"),
-                            @Suppress("UNNECESSARY_SAFE_CALL")
-                            File(
-                                    System.getProperty("user.home")?.plus("/.local/share/applications/")
-                                            ?: ""
-                            )
-                    )
+            val directories = listOf(
+                File("/usr/share/applications/"),
+                File(System.getProperty("user.home")?.plus("/.local/share/applications/") ?: "")
+            )
 
             directories.forEach { dir ->
                 if (dir.exists() && dir.isDirectory) {
@@ -38,100 +33,101 @@ actual fun queryInstalledBrowsers(context: Any?): List<String> {
                         try {
                             val lines = file.readLines()
                             val content = lines.joinToString("\n")
-
-                            val categories =
-                                    lines
-                                            .find { it.startsWith("Categories=") }
-                                            ?.substringAfter("Categories=")
-                                    ?: ""
-                            val mimeTypes =
-                                    lines
-                                            .find { it.startsWith("MimeType=") }
-                                            ?.substringAfter("MimeType=")
-                                    ?: ""
-                            val execLine =
-                                    lines.find { it.startsWith("Exec=") }?.substringAfter("Exec=") ?: ""
-                            val comment =
-                                    lines.find { it.startsWith("Comment=") }?.substringAfter("Comment=")
-                                    ?: ""
-
-                            val isBrowser =
-                                    categories.contains("WebBrowser") &&
-                                            mimeTypes.contains("x-scheme-handler/http")
-
-                            val isExcluded =
-                                    categories.contains("TextEditor") ||
-                                            categories.contains("Development") ||
-                                            categories.contains("IDE") ||
-                                            categories.contains("WebApps") ||
-                                            comment.contains("AppDock Web App") ||
-                                            execLine.contains("--app=")
-
-                            val isHidden = content.contains("NoDisplay=true")
-
-                            if (isBrowser && !isExcluded && !isHidden) {
-                                val nameLine = lines.find { it.startsWith("Name=") }
-                                val prettyName = nameLine?.substringAfter("Name=")?.trim()
-
-                                if (prettyName != null &&
-                                                !browsers.contains(prettyName) &&
-                                                !prettyName.contains("Private", ignoreCase = true) &&
-                                                !prettyName.contains("Incognito", ignoreCase = true)
-                                ) {
+                            val isBrowser = (content.contains("Categories=") && content.contains("WebBrowser")) ||
+                                           (content.contains("MimeType=") && (content.contains("text/html") || content.contains("x-scheme-handler/http")))
+                            
+                            val isExcluded = content.contains("NoDisplay=true") || content.contains("AppDock Web App") || content.contains("--app=")
+                            
+                            if (isBrowser && !isExcluded) {
+                                val prettyName = lines.find { it.startsWith("Name=") }?.substringAfter("Name=")?.trim()
+                                if (prettyName != null && !browsers.contains(prettyName)) {
                                     browsers.add(prettyName)
                                 }
                             }
-                        } catch (e: Exception) {
-                            // Skip files we can't read
-                        }
+                        } catch (_: Exception) {}
                     }
                 }
             }
         } else if (osName.contains("windows")) {
-            val roots =
-                    listOfNotNull(
-                            System.getenv("ProgramFiles"),
-                            System.getenv("ProgramFiles(x86)"),
-                            System.getenv("LOCALAPPDATA")
-                    )
+            // Check StartMenuInternet registry key - the most reliable way on Windows
+            try {
+                val process = Runtime.getRuntime().exec(arrayOf("reg", "query", "HKLM\\SOFTWARE\\Clients\\StartMenuInternet"))
+                val output = process.inputStream.bufferedReader().readText()
+                val keys = output.split("\n").filter { it.trim().startsWith("HKEY_LOCAL_MACHINE") }
+                
+                keys.forEach { key ->
+                    try {
+                        val nameProcess = Runtime.getRuntime().exec(arrayOf("reg", "query", key.trim(), "/ve"))
+                        val nameOutput = nameProcess.inputStream.bufferedReader().readText()
+                        val name = nameOutput.split("REG_SZ").last().trim()
+                        if (name.isNotEmpty() && !browsers.contains(name)) {
+                            browsers.add(name)
+                        }
+                    } catch (_: Exception) {}
+                }
+            } catch (_: Exception) {}
 
-            val commonBrowsers =
-                    listOf(
-                            "Google/Chrome/Application/chrome.exe" to "Chrome",
-                            "Microsoft/Edge/Application/msedge.exe" to "Edge",
-                            "Mozilla Firefox/firefox.exe" to "Firefox",
-                            "BraveSoftware/Brave-Browser/Application/brave.exe" to "Brave",
-                            "Opera/launcher.exe" to "Opera",
-                            "Vivaldi/Application/vivaldi.exe" to "Vivaldi"
-                    )
+            // Fallback for user-level installations
+            try {
+                val process = Runtime.getRuntime().exec(arrayOf("reg", "query", "HKCU\\SOFTWARE\\Clients\\StartMenuInternet"))
+                val output = process.inputStream.bufferedReader().readText()
+                val keys = output.split("\n").filter { it.trim().startsWith("HKEY_CURRENT_USER") }
+                
+                keys.forEach { key ->
+                    try {
+                        val nameProcess = Runtime.getRuntime().exec(arrayOf("reg", "query", key.trim(), "/ve"))
+                        val nameOutput = nameProcess.inputStream.bufferedReader().readText()
+                        val name = nameOutput.split("REG_SZ").last().trim()
+                        if (name.isNotEmpty() && !browsers.contains(name)) {
+                            browsers.add(name)
+                        }
+                    } catch (_: Exception) {}
+                }
+            } catch (_: Exception) {}
 
+            // Last resort: common paths
+            val roots = listOfNotNull(System.getenv("ProgramFiles"), System.getenv("ProgramFiles(x86)"), System.getenv("LOCALAPPDATA"))
+            val commonBrowsers = listOf(
+                "Google/Chrome/Application/chrome.exe" to "Chrome",
+                "Microsoft/Edge/Application/msedge.exe" to "Edge",
+                "Mozilla Firefox/firefox.exe" to "Firefox",
+                "BraveSoftware/Brave-Browser/Application/brave.exe" to "Brave",
+                "Opera/launcher.exe" to "Opera",
+                "Vivaldi/Application/vivaldi.exe" to "Vivaldi"
+            )
             roots.forEach { root ->
                 commonBrowsers.forEach { (path, name) ->
                     val fullPath = File(root, path)
-                    if (fullPath.exists()) {
-                        if (!browsers.contains(name)) {
-                            browsers.add(name)
-                        }
-                    }
+                    if (fullPath.exists() && !browsers.contains(name)) browsers.add(name)
                 }
             }
         } else if (osName.contains("mac")) {
             val appDirs =
                     listOf("/Applications", (System.getProperty("user.home") ?: "") + "/Applications")
-            val commonMacBrowsers =
-                    listOf(
-                            "Safari.app" to "Safari",
-                            "Google Chrome.app" to "Chrome",
-                            "Firefox.app" to "Firefox",
-                            "Brave Browser.app" to "Brave",
-                            "Microsoft Edge.app" to "Edge"
-                    )
-
-            appDirs.forEach { dir ->
-                commonMacBrowsers.forEach { (appName, prettyName) ->
-                    if (File(dir, appName).exists()) {
-                        if (!browsers.contains(prettyName)) {
-                            browsers.add(prettyName)
+            
+            // Known browser keywords to help identify them
+            val browserKeywords = listOf("Browser", "Chrome", "Firefox", "Safari", "Edge", "Brave", "Opera", "Vivaldi", "Arc", "Orion", "DuckDuckGo", "Waterfox", "Pale Moon")
+            
+            appDirs.forEach { dirPath ->
+                val dir = File(dirPath)
+                if (dir.exists() && dir.isDirectory) {
+                    dir.listFiles { _, name -> name.endsWith(".app") }?.forEach { appBundle ->
+                        val appName = appBundle.name.removeSuffix(".app")
+                        
+                        // Check if it's a known browser or contains "Browser"
+                        val isLikelyBrowser = browserKeywords.any { appName.contains(it, ignoreCase = true) }
+                        
+                        if (isLikelyBrowser) {
+                            // Map to pretty names for common ones
+                            val prettyName = when {
+                                appName.contains("Google Chrome", ignoreCase = true) -> "Chrome"
+                                appName.contains("Brave Browser", ignoreCase = true) -> "Brave"
+                                appName.contains("Microsoft Edge", ignoreCase = true) -> "Edge"
+                                else -> appName
+                            }
+                            if (!browsers.contains(prettyName)) {
+                                browsers.add(prettyName)
+                            }
                         }
                     }
                 }

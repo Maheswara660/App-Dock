@@ -8,58 +8,81 @@ import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import com.foss.appdock.shared.domain.WebApp
+import java.io.File
+import java.io.InputStream
 import java.net.URL
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class AndroidShortcutManager(private val context: Context) : ShortcutManager {
-    @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     override fun createShortcut(app: WebApp) {
-        if (!ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
-            return
+        scope.launch {
+            try {
+                val shortcutInfo = buildShortcutInfo(app)
+                withContext(Dispatchers.Main) {
+                    ShortcutManagerCompat.pushDynamicShortcut(context, shortcutInfo)
+                    if (ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
+                        ShortcutManagerCompat.requestPinShortcut(context, shortcutInfo, null)
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("AppDock", "Failed to create shortcut for ${app.name}", e)
+            }
+        }
+    }
+
+    private fun buildShortcutInfo(app: WebApp): ShortcutInfoCompat {
+        val deepLink = Uri.parse("appdock://launch?id=${app.id}")
+        val launchIntent =
+                Intent(context, ShortcutHandlerActivity::class.java).apply {
+                    action = Intent.ACTION_VIEW
+                    data = deepLink
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                }
+
+        return ShortcutInfoCompat.Builder(context, "appdock_shortcut_${app.id}")
+                .setShortLabel(app.name)
+                .setLongLabel(app.name)
+                .setIcon(resolveShortcutIcon(app.iconPath))
+                .setIntent(launchIntent)
+                .build()
+    }
+
+    private fun resolveShortcutIcon(iconPath: String?): IconCompat {
+        if (iconPath.isNullOrBlank()) {
+            return IconCompat.createWithResource(context, context.applicationInfo.icon)
         }
 
-        GlobalScope.launch(Dispatchers.IO) {
-            val intent =
-                    Intent(Intent.ACTION_VIEW, Uri.parse("appdock://launch?id=${app.id}")).apply {
-                        setClassName(context.packageName, "com.foss.appdock.MainActivity")
-                    }
-
-            val iconCompat =
-                    if (!app.iconPath.isNullOrBlank()) {
-                        try {
-                            val url = URL(app.iconPath)
-                            val bitmap = BitmapFactory.decodeStream(url.openStream())
-                            if (bitmap != null) {
-                                IconCompat.createWithBitmap(bitmap)
-                            } else {
-                                IconCompat.createWithResource(context, context.applicationInfo.icon)
-                            }
-                        } catch (e: Exception) {
-                            IconCompat.createWithResource(context, context.applicationInfo.icon)
+        return try {
+            val stream: InputStream? =
+                    when {
+                        iconPath.startsWith("http://") || iconPath.startsWith("https://") ->
+                                URL(iconPath).openStream()
+                        iconPath.startsWith("content://") || iconPath.startsWith("file://") ->
+                                context.contentResolver.openInputStream(Uri.parse(iconPath))
+                        else -> {
+                            val localFile = File(iconPath)
+                            if (localFile.exists()) localFile.inputStream() else null
                         }
-                    } else {
-                        IconCompat.createWithResource(context, context.applicationInfo.icon)
                     }
 
-            val shortcutInfo =
-                    ShortcutInfoCompat.Builder(context, "appdock_shortcut_${app.id}")
-                            .setShortLabel(app.name)
-                            .setLongLabel(app.name)
-                            .setIcon(iconCompat)
-                            .setIntent(intent)
-                            .build()
-
-            withContext(Dispatchers.Main) {
-                ShortcutManagerCompat.requestPinShortcut(context, shortcutInfo, null)
-            }
+            val bitmap = stream.use { it?.let(BitmapFactory::decodeStream) }
+            if (bitmap != null) IconCompat.createWithBitmap(bitmap)
+            else IconCompat.createWithResource(context, context.applicationInfo.icon)
+        } catch (_: Exception) {
+            IconCompat.createWithResource(context, context.applicationInfo.icon)
         }
     }
 
     override fun deleteShortcut(app: WebApp) {
         val shortcutIds = listOf("appdock_shortcut_${app.id}")
+        ShortcutManagerCompat.removeDynamicShortcuts(context, shortcutIds)
+        ShortcutManagerCompat.removeLongLivedShortcuts(context, shortcutIds)
         ShortcutManagerCompat.disableShortcuts(context, shortcutIds, "App deleted from App Dock")
     }
 }

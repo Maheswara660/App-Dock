@@ -101,8 +101,12 @@ actual class BrowserLauncher actual constructor(@Suppress("UNUSED_PARAMETER") co
                     }
                     args.add(url)
                 } else if (actualBrowserLower == "unknown") {
-                    args.add(url) // Unknown browser: just launch url
+                    args.add(url)
                 } else {
+                    // Chromium browsers
+                    args.add("--no-first-run")
+                    args.add("--no-default-browser-check")
+                    
                     if (isStandalone) args.add("--app=$url")
                     else args.add(url)
 
@@ -120,40 +124,73 @@ actual class BrowserLauncher actual constructor(@Suppress("UNUSED_PARAMETER") co
                 commands.add(args.toTypedArray())
             }
             
-            // Standard Windows fallback
             commands.add(arrayOf("cmd.exe", "/c", "start", "", url))
         } else if (osName.contains("mac")) {
-            // macOS implementation
-            when (browserLower) {
-                "chrome", "google-chrome" -> {
-                    commands.add(arrayOf("open", "-a", "Google Chrome", url))
-                    if (isIncognito) commands.add(arrayOf("open", "-a", "Google Chrome", "--args", "--incognito", url))
+            val browserApp = when (browserLower) {
+                "chrome", "google-chrome" -> "Google Chrome"
+                "brave", "brave-browser" -> "Brave Browser"
+                "edge", "microsoft-edge" -> "Microsoft Edge"
+                "firefox" -> "Firefox"
+                "safari" -> "Safari"
+                else -> null
+            }
+
+            if (browserApp != null && browserApp != "Safari") {
+                val args = mutableListOf("open", "-a", browserApp)
+                val chromeArgs = mutableListOf<String>()
+                
+                if (browserApp == "Firefox") {
+                    if (isIncognito) chromeArgs.add("-private-window")
+                    if (isIsolated) {
+                        val profileDir = java.io.File(System.getProperty("user.home"), "Library/Application Support/AppDock/Profiles/${url.hashCode()}")
+                        profileDir.mkdirs()
+                        chromeArgs.add("-profile")
+                        chromeArgs.add(profileDir.absolutePath)
+                    }
+                } else {
+                    // Chromium
+                    chromeArgs.add("--no-first-run")
+                    chromeArgs.add("--no-default-browser-check")
+                    if (isIncognito) {
+                        if (browserApp == "Microsoft Edge") chromeArgs.add("--inprivate")
+                        else chromeArgs.add("--incognito")
+                    }
+                    if (isIsolated) {
+                        val profileDir = java.io.File(System.getProperty("user.home"), "Library/Application Support/AppDock/Profiles/${url.hashCode()}")
+                        profileDir.mkdirs()
+                        ensureChromiumProfileInitialized(profileDir)
+                        chromeArgs.add("--user-data-dir=${profileDir.absolutePath}")
+                    }
+                    if (isStandalone) chromeArgs.add("--app=$url")
                 }
-                "brave", "brave-browser" -> {
-                    commands.add(arrayOf("open", "-a", "Brave Browser", url))
-                    if (isIncognito) commands.add(arrayOf("open", "-a", "Brave Browser", "--args", "--incognito", url))
+                
+                if (chromeArgs.isNotEmpty()) {
+                    args.add("--args")
+                    args.addAll(chromeArgs)
                 }
-                "edge", "microsoft-edge" -> {
-                    commands.add(arrayOf("open", "-a", "Microsoft Edge", url))
-                    if (isIncognito) commands.add(arrayOf("open", "-a", "Microsoft Edge", "--args", "--inprivate", url))
+                
+                if (!isStandalone || browserApp == "Firefox") {
+                    args.add(url)
                 }
-                "firefox" -> {
-                    commands.add(arrayOf("open", "-a", "Firefox", url))
-                    if (isIncognito) commands.add(arrayOf("open", "-a", "Firefox", "--args", "-private-window", url))
-                }
-                "safari" -> {
-                    commands.add(arrayOf("open", "-a", "Safari", url))
-                }
-                else -> {
-                    commands.add(arrayOf("open", url))
-                }
+                
+                commands.add(args.toTypedArray())
+            } else if (browserApp == "Safari") {
+                commands.add(arrayOf("open", "-a", "Safari", url))
+            } else {
+                commands.add(arrayOf("open", url))
             }
         } else {
             // Linux implementation
+            val profileBase = java.io.File(System.getProperty("user.home"), ".config/appdock/profiles/${url.hashCode()}")
+            
             when (browserLower) {
                 "chrome", "google-chrome", "google-chrome-stable", "chrome-browser" -> {
-                    val args = mutableListOf("google-chrome")
+                    val args = mutableListOf("google-chrome", "--no-first-run", "--no-default-browser-check")
                     if (isIncognito) args.add("--incognito")
+                    if (isIsolated) {
+                        profileBase.mkdirs()
+                        args.add("--user-data-dir=${profileBase.absolutePath}")
+                    }
                     if (isStandalone) {
                         args.add("--app=$url")
                         args.add("--window-size=1280,720")
@@ -161,8 +198,12 @@ actual class BrowserLauncher actual constructor(@Suppress("UNUSED_PARAMETER") co
                     commands.add(args.toTypedArray())
                 }
                 "brave", "brave-browser" -> {
-                    val args = mutableListOf("brave-browser")
+                    val args = mutableListOf("brave-browser", "--no-first-run", "--no-default-browser-check")
                     if (isIncognito) args.add("--incognito")
+                    if (isIsolated) {
+                        profileBase.mkdirs()
+                        args.add("--user-data-dir=${profileBase.absolutePath}")
+                    }
                     if (isStandalone) {
                         args.add("--app=$url")
                         args.add("--window-size=1280,720")
@@ -170,8 +211,12 @@ actual class BrowserLauncher actual constructor(@Suppress("UNUSED_PARAMETER") co
                     commands.add(args.toTypedArray())
                 }
                 "edge", "microsoft-edge", "msedge" -> {
-                    val args = mutableListOf("microsoft-edge")
+                    val args = mutableListOf("microsoft-edge", "--no-first-run", "--no-default-browser-check")
                     if (isIncognito) args.add("--inprivate")
+                    if (isIsolated) {
+                        profileBase.mkdirs()
+                        args.add("--user-data-dir=${profileBase.absolutePath}")
+                    }
                     if (isStandalone) {
                         args.add("--app=$url")
                         args.add("--window-size=1280,720")
@@ -181,6 +226,11 @@ actual class BrowserLauncher actual constructor(@Suppress("UNUSED_PARAMETER") co
                 "firefox", "firefox-esr" -> {
                     val args = mutableListOf("firefox")
                     if (isIncognito) args.add("-private-window")
+                    if (isIsolated) {
+                        profileBase.mkdirs()
+                        args.add("-profile")
+                        args.add(profileBase.absolutePath)
+                    }
                     if (isStandalone) {
                         args.add("-new-window")
                         args.add(url)
@@ -191,12 +241,12 @@ actual class BrowserLauncher actual constructor(@Suppress("UNUSED_PARAMETER") co
                 }
             }
             
-            // Fallback for system default or if specific browser failed
             commands.add(arrayOf("xdg-open", url))
         }
 
         for (command in commands) {
             try {
+                // For macOS we sometimes need to process the array to ensure flags are handled correctly
                 val process = runtime.exec(command)
                 Thread.sleep(200)
                 if (process.isAlive || process.exitValue() == 0) return true
@@ -206,5 +256,14 @@ actual class BrowserLauncher actual constructor(@Suppress("UNUSED_PARAMETER") co
         }
 
         return false
+    }
+
+    private fun ensureChromiumProfileInitialized(profileDir: java.io.File) {
+        val firstRunMarker = java.io.File(profileDir, "First Run")
+        if (!firstRunMarker.exists()) {
+            try {
+                firstRunMarker.createNewFile()
+            } catch (_: Exception) {}
+        }
     }
 }

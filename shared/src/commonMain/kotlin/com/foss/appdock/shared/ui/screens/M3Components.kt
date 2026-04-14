@@ -49,7 +49,7 @@ fun DockPageHeader(title: String, onBack: (() -> Unit)? = null) {
                                 modifier =
                                         Modifier.size(40.dp)
                                                 .clip(RoundedCornerShape(12.dp))
-                                                .background(adaptiveSurfaceVariantBackground())
+                                                .background(MaterialTheme.colorScheme.surfaceVariant)
                                                 .clickable { onBack() },
                                 contentAlignment = Alignment.Center
                         ) {
@@ -67,7 +67,7 @@ fun DockPageHeader(title: String, onBack: (() -> Unit)? = null) {
                         text = title,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = adaptiveOnSurface(),
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Center
                 )
@@ -308,45 +308,58 @@ enum class SortOrder {
 }
 
 @Composable
-fun EmptyState(title: String, subtitle: String) {
+fun EmptyState(
+        title: String,
+        subtitle: String,
+        icon: ImageVector? = null,
+        action: (@Composable () -> Unit)? = null
+) {
         Column(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
         ) {
                 Box(
-                        modifier =
-                                Modifier.size(120.dp)
-                                        .clip(RoundedCornerShape(32.dp))
-                                        .background(adaptiveSurfaceVariantBackground())
-                                        .padding(32.dp),
+                        modifier = Modifier.size(104.dp),
                         contentAlignment = Alignment.Center
                 ) {
-                        Icon(
-                                imageVector = Icons.Filled.Apps,
-                                contentDescription = null,
-                                tint =
-                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                                alpha = 0.5f
-                                        ),
+                        Box(
                                 modifier = Modifier.fillMaxSize()
+                                        .border(2.dp, MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f), RoundedCornerShape(32.dp))
                         )
+                        Box(
+                                modifier = Modifier.size(80.dp)
+                                        .clip(RoundedCornerShape(24.dp))
+                                        .background(MaterialTheme.colorScheme.primaryContainer),
+                                contentAlignment = Alignment.Center
+                        ) {
+                                Icon(
+                                        imageVector = icon ?: Icons.Filled.Apps,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.size(40.dp)
+                                )
+                        }
                 }
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(20.dp))
                 Text(
                         title,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = adaptiveOnSurface()
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 Text(
                         subtitle,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(horizontal = 32.dp)
                 )
+                if (action != null) {
+                        Spacer(modifier = Modifier.height(20.dp))
+                        action()
+                }
         }
 }
 
@@ -354,10 +367,10 @@ fun EmptyState(title: String, subtitle: String) {
 fun SortDropdownList(currentSort: SortOrder, onSortChanged: (SortOrder) -> Unit) {
         var menuExpanded by remember { mutableStateOf(false) }
 
-        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+        Box(modifier = Modifier.wrapContentSize(), contentAlignment = Alignment.CenterEnd) {
                 Box(modifier = Modifier.wrapContentSize(Alignment.TopEnd)) {
                         Surface(
-                                color = adaptiveSurfaceVariantBackground(),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.clickable { menuExpanded = true }
                         ) {
@@ -411,7 +424,7 @@ fun SortDropdownList(currentSort: SortOrder, onSortChanged: (SortOrder) -> Unit)
                                                                 )
                                                                         MaterialTheme.colorScheme
                                                                                 .primary
-                                                                else adaptiveOnSurface()
+                                                                else MaterialTheme.colorScheme.onSurface
                                                 )
                                         },
                                         onClick = {
@@ -429,7 +442,7 @@ fun SortDropdownList(currentSort: SortOrder, onSortChanged: (SortOrder) -> Unit)
                                                                 )
                                                                         MaterialTheme.colorScheme
                                                                                 .primary
-                                                                else adaptiveOnSurface()
+                                                                else MaterialTheme.colorScheme.onSurface
                                                 )
                                         },
                                         onClick = {
@@ -445,7 +458,7 @@ fun SortDropdownList(currentSort: SortOrder, onSortChanged: (SortOrder) -> Unit)
                                                                 if (currentSort == SortOrder.NEWEST)
                                                                         MaterialTheme.colorScheme
                                                                                 .primary
-                                                                else adaptiveOnSurface()
+                                                                else MaterialTheme.colorScheme.onSurface
                                                 )
                                         },
                                         onClick = {
@@ -586,12 +599,12 @@ fun SwipeableAppListItem(
                 ) {
                         Surface(
                                 modifier = Modifier.fillMaxWidth().clickable { onClick() },
-                                color = adaptiveSurfaceVariantBackground(),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
                                 shape = RoundedCornerShape(16.dp),
                                 border =
                                         androidx.compose.foundation.BorderStroke(
                                                 1.dp,
-                                                adaptiveSurfaceVariantBorder()
+                                                MaterialTheme.colorScheme.outlineVariant
                                         )
                         ) {
                                 Row(
@@ -705,7 +718,7 @@ fun SwipeableAppListItem(
                                                                         MaterialTheme.typography
                                                                                 .bodyLarge,
                                                                 fontWeight = FontWeight.SemiBold,
-                                                                color = adaptiveOnSurface()
+                                                                color = MaterialTheme.colorScheme.onSurface
                                                         )
                                                 }
                                         }

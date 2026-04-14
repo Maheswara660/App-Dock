@@ -1,4 +1,5 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import java.time.LocalDate
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -6,14 +7,13 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
     jvm("desktop")
     sourceSets {
         val desktopMain by getting  {
             dependencies {
                 implementation(compose.desktop.currentOs)
                 implementation(project(":shared"))
-                implementation(libs.compose.webview.multiplatform)
             }
         }
     }
@@ -35,14 +35,14 @@ compose.desktop {
             val availableFormats = when {
                 os.contains("win") -> listOf(TargetFormat.Exe, TargetFormat.Msi)
                 os.contains("mac") -> listOf(TargetFormat.Dmg, TargetFormat.Pkg)
-                else -> listOf(TargetFormat.Deb, TargetFormat.Rpm, TargetFormat.AppImage)
+                else -> listOf(TargetFormat.Deb, TargetFormat.Rpm)
             }
             targetFormats(*availableFormats.toTypedArray())
             packageName = "AppDock"
-            packageVersion = "1.1.0"
+            packageVersion = "1.2.0"
             vendor = "AppDock"
             description = "App Dock - Modern Web App Manager"
-            copyright = "© 2026 AppDock"
+            copyright = "© ${LocalDate.now().year} Maheswara660. All rights reserved."
             
             modules("java.sql")
 
@@ -55,7 +55,7 @@ compose.desktop {
 
             macOS {
                 bundleID = "com.foss.appdock"
-                iconFile.set(project.file("src/desktopMain/resources/myicon.icns"))
+                iconFile.set(project.file("src/desktopMain/resources/AppDock.icns"))
             }
         }
     }

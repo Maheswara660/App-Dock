@@ -31,6 +31,7 @@ kotlin {
                 implementation(libs.ktor.serialization.kotlinx.json)
                 implementation(libs.kotlinx.serialization.json)
                 implementation(libs.sqldelight.coroutines.extensions)
+                implementation(libs.okio)
             }
         }
         val androidMain by getting {
@@ -43,6 +44,9 @@ kotlin {
                 implementation(libs.ktor.client.okhttp)
                 implementation(libs.kotlinx.coroutines.android)
                 implementation(libs.sqldelight.android.driver)
+                implementation(libs.apksig)
+                implementation(libs.gson)
+                implementation(libs.commons.compress)
             }
         }
         val desktopMain by getting {
@@ -53,6 +57,7 @@ kotlin {
                 implementation(libs.ktor.client.cio)
                 implementation(libs.slf4j.simple)
                 implementation(libs.compose.webview.multiplatform)
+                implementation(libs.commons.compress)
             }
         }
     }

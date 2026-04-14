@@ -79,6 +79,10 @@ class WebViewActivity : ComponentActivity() {
                 override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
                     return false
                 }
+
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    super.onPageFinished(view, url)
+                }
             }
             webChromeClient = WebChromeClient()
 

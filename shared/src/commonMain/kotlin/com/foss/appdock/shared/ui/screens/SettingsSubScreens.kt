@@ -50,10 +50,6 @@ fun SettingsAppearanceScreen(
         onThemeSelected: (String) -> Unit,
         accentColor: String,
         onAccentColorSelected: (String) -> Unit,
-        selectedIconSize: String,
-        onIconSizeSelected: (String) -> Unit,
-        selectedIconShape: String,
-        onIconShapeSelected: (String) -> Unit,
         onBack: () -> Unit
 ) {
         val accentColors =
@@ -75,7 +71,8 @@ fun SettingsAppearanceScreen(
                         "#0EA5E9" // Sky
                 )
 
-        AppScaffold(bottomBar = {}) {
+        Box(modifier = Modifier.fillMaxSize()) {
+
                 val scrollState = rememberScrollState()
                 Box(modifier = Modifier.fillMaxSize()) {
                         Column(
@@ -190,108 +187,6 @@ fun SettingsAppearanceScreen(
                                                                         }
                                                                 )
                                                         }
-                                                }
-                                        }
-                                }
-                        }
-
-                        Spacer(Modifier.height(32.dp))
-
-                        // ── 3. Icon Styling Section ────────────────────────────
-                        SettingsSectionTitle("Icon Styling")
-                        Surface(
-                                shape = RoundedCornerShape(16.dp),
-                                color = adaptiveSurfaceVariantBackground(),
-                                modifier =
-                                        Modifier.fillMaxWidth()
-                                                .border(
-                                                        1.dp,
-                                                        adaptiveSurfaceVariantBorder(),
-                                                        RoundedCornerShape(16.dp)
-                                                )
-                        ) {
-                                Column(
-                                        modifier = Modifier.padding(20.dp),
-                                        verticalArrangement = Arrangement.spacedBy(24.dp)
-                                ) {
-                                        // Icon Size
-                                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                                Text(
-                                                        "Icon Size",
-                                                        style =
-                                                                MaterialTheme.typography
-                                                                        .labelMedium,
-                                                        color =
-                                                                MaterialTheme.colorScheme
-                                                                        .onSurfaceVariant
-                                                )
-                                                SegmentedControl(
-                                                        options =
-                                                                listOf(
-                                                                        "Small",
-                                                                        "Medium",
-                                                                        "Large",
-                                                                        "System Adaptive"
-                                                                ),
-                                                        selectedOption = selectedIconSize,
-                                                        onOptionSelected = onIconSizeSelected
-                                                )
-                                        }
-
-                                        // App Icon Shape
-                                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                                Text(
-                                                        "App Icon Shape",
-                                                        style =
-                                                                MaterialTheme.typography
-                                                                        .labelMedium,
-                                                        color =
-                                                                MaterialTheme.colorScheme
-                                                                        .onSurfaceVariant
-                                                )
-                                                Row(
-                                                        horizontalArrangement =
-                                                                Arrangement.spacedBy(12.dp)
-                                                ) {
-                                                        listOf(
-                                                                        "Squircle",
-                                                                        "Circle",
-                                                                        "Square",
-                                                                        "System Adaptive"
-                                                                )
-                                                                .forEach { shape ->
-                                                                        IconShapeOption(
-                                                                                name = shape,
-                                                                                icon =
-                                                                                        when (shape
-                                                                                        ) {
-                                                                                                "Squircle" ->
-                                                                                                        Icons.Filled
-                                                                                                                .DashboardCustomize
-                                                                                                "Circle" ->
-                                                                                                        Icons.Filled
-                                                                                                                .AccountCircle
-                                                                                                "Square" ->
-                                                                                                        Icons.Filled
-                                                                                                                .CropSquare
-                                                                                                else ->
-                                                                                                        Icons.Filled
-                                                                                                                .SettingsSuggest
-                                                                                        },
-                                                                                isSelected =
-                                                                                        selectedIconShape ==
-                                                                                                shape,
-                                                                                modifier =
-                                                                                        Modifier.weight(
-                                                                                                1f
-                                                                                        ),
-                                                                                onClick = {
-                                                                                        onIconShapeSelected(
-                                                                                                shape
-                                                                                        )
-                                                                                }
-                                                                        )
-                                                                }
                                                 }
                                         }
                                 }
@@ -423,57 +318,14 @@ private fun ThemeOptionRow(
         }
 }
 
-@Composable
-private fun IconShapeOption(
-        name: String,
-        icon: ImageVector,
-        isSelected: Boolean,
-        modifier: Modifier = Modifier,
-        onClick: () -> Unit
-) {
-        Column(
-                modifier =
-                        modifier.clip(RoundedCornerShape(12.dp))
-                                .background(
-                                        if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                                        else Color.Transparent
-                                )
-                                .border(
-                                        width = 2.dp,
-                                        color =
-                                                if (isSelected) MaterialTheme.colorScheme.primary
-                                                else Color.Transparent,
-                                        shape = RoundedCornerShape(12.dp)
-                                )
-                                .clickable { onClick() }
-                                .padding(12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-                Box(
-                        modifier =
-                                Modifier.size(48.dp)
-                                        .background(
-                                                MaterialTheme.colorScheme.surfaceVariant,
-                                                RoundedCornerShape(12.dp)
-                                        ),
-                        contentAlignment = Alignment.Center
-                ) { Icon(imageVector = icon, contentDescription = null, tint = Color.White) }
-                Text(
-                        text = name,
-                        style = MaterialTheme.typography.labelSmall,
-                        color =
-                                if (isSelected) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-        }
-}
 
 // ── 2. Privacy Screen ─────────────────────────────────────────────────────────
 
 @Composable
-fun SettingsPrivacyScreen(onBack: () -> Unit) {
-        AppScaffold(bottomBar = {}) {
+@Suppress("UNUSED_PARAMETER")
+fun SettingsPrivacyScreen(onBack: () -> Unit, onShowFlyout: (String, ImageVector) -> Unit = { _, _ -> }) {
+        Box(modifier = Modifier.fillMaxSize()) {
+
                 val scrollState = rememberScrollState()
                 Box(modifier = Modifier.fillMaxSize()) {
                         Column(
@@ -504,7 +356,9 @@ fun SettingsPrivacyScreen(onBack: () -> Unit) {
                                                 verticalArrangement = Arrangement.spacedBy(20.dp)
                                         ) {
                                                 Button(
-                                                        onClick = { /* Clear Data Action */},
+                                                        onClick = { 
+                                                            // silenced
+                                                        },
                                                         modifier =
                                                                 Modifier.fillMaxWidth()
                                                                         .height(48.dp),
@@ -585,17 +439,19 @@ private fun ToggleOption(
 }
 
 @Composable
+@Suppress("UNUSED_PARAMETER")
 fun SettingsBackupScreen(
         databaseHelper: DatabaseHelper,
         onExportClick: () -> Unit,
         onImportClick: () -> Unit,
         onBack: () -> Unit,
-        snackbarHostState: SnackbarHostState
+        onShowFlyout: (String, ImageVector) -> Unit = { _, _ -> }
 ) {
         val history by databaseHelper.getAllBackupHistory().collectAsState(emptyList())
         val coroutineScope = rememberCoroutineScope()
 
-        AppScaffold(snackbarHostState = snackbarHostState, bottomBar = {}) {
+        Box(modifier = Modifier.fillMaxSize()) {
+
                 val scrollState = rememberScrollState()
                 Box(modifier = Modifier.fillMaxSize()) {
                         Column(
@@ -676,7 +532,8 @@ fun SettingsBackupScreen(
                                         history.forEach { item ->
                                                 BackupHistoryItem(
                                                         item = item,
-                                                        onRestore = { /* TODO: Implement auto restore from local history */
+                                                        onRestore = { 
+                                                            // silenced
                                                         },
                                                         onDelete = {
                                                                 coroutineScope.launch {
@@ -892,7 +749,8 @@ fun SettingsAppManagementScreen(
         onBrowserSelected: (String) -> Unit,
         onBack: () -> Unit
 ) {
-        AppScaffold(bottomBar = {}) {
+        Box(modifier = Modifier.fillMaxSize()) {
+
                 val scrollState = rememberScrollState()
                 Box(modifier = Modifier.fillMaxSize()) {
                         Column(
@@ -985,7 +843,8 @@ fun SettingsAppManagementScreen(
 
 @Composable
 fun SettingsAboutScreen(onOpenUrl: (String) -> Unit, onBack: () -> Unit) {
-        AppScaffold(bottomBar = {}) {
+        Box(modifier = Modifier.fillMaxSize()) {
+
                 val scrollState = rememberScrollState()
                 Box(modifier = Modifier.fillMaxSize()) {
                         Column(
@@ -1061,38 +920,72 @@ fun SettingsAboutScreen(onOpenUrl: (String) -> Unit, onBack: () -> Unit) {
                                 color = adaptiveOnSurface()
                         )
                         Text(
-                                "Version 1.1.0 (Stable)",
+                                "Version ${com.foss.appdock.shared.utils.Constants.VERSION}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
                         Spacer(Modifier.height(32.dp))
 
-                        // ── Action Cards ───────────────────────────────────────────────────────
-                        Row(
+                        // ── Action Cards (Responsive Layout) ───────────────────────────────────
+                        val cardHeight = if (platformIsAndroid) 140.dp else 160.dp
+                        
+                        if (platformIsAndroid) {
+                            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    AboutActionCard(
+                                        title = "GitHub",
+                                        description = "View source code & report issues.",
+                                        icon = Icons.Filled.Code,
+                                        modifier = Modifier.weight(1f).height(cardHeight),
+                                        onClick = { onOpenUrl("https://github.com/Maheswara660/App-Dock") }
+                                    )
+                                    AboutActionCard(
+                                        title = "Support",
+                                        description = "Buy me a coffee on Ko-fi.",
+                                        icon = Icons.Filled.Favorite,
+                                        modifier = Modifier.weight(1f).height(cardHeight),
+                                        onClick = { onOpenUrl("https://ko-fi.com/Maheswara660/") }
+                                    )
+                                }
+                                AboutActionCard(
+                                    title = "Check for Updates",
+                                    description = "Visit releases page to find the latest version.",
+                                    icon = Icons.Filled.BrowserUpdated,
+                                    modifier = Modifier.fillMaxWidth().height(cardHeight),
+                                    onClick = { onOpenUrl("https://github.com/Maheswara660/App-Dock/releases") }
+                                )
+                            }
+                        } else {
+                            Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
+                            ) {
                                 AboutActionCard(
-                                        title = "GitHub Repository",
-                                        description =
-                                                "View source code, report issues, or contribute.",
-                                        icon = Icons.Filled.Code,
-                                        modifier = Modifier.weight(1f),
-                                        onClick = {
-                                                onOpenUrl(
-                                                        "https://github.com/Maheswara660/App-Dock"
-                                                )
-                                        }
+                                    title = "GitHub Repository",
+                                    description = "View source code, report issues, or contribute.",
+                                    icon = Icons.Filled.Code,
+                                    modifier = Modifier.weight(1f).height(cardHeight),
+                                    onClick = { onOpenUrl("https://github.com/Maheswara660/App-Dock") }
                                 )
                                 AboutActionCard(
-                                        title = "Support on Ko-fi",
-                                        description =
-                                                "Buy me a coffee to support the development of App Dock.",
-                                        icon = Icons.Filled.Favorite,
-                                        modifier = Modifier.weight(1f),
-                                        onClick = { onOpenUrl("https://ko-fi.com/Maheswara660/") }
+                                    title = "Support on Ko-fi",
+                                    description = "Buy me a coffee to support development.",
+                                    icon = Icons.Filled.Favorite,
+                                    modifier = Modifier.weight(1f).height(cardHeight),
+                                    onClick = { onOpenUrl("https://ko-fi.com/Maheswara660/") }
                                 )
+                                AboutActionCard(
+                                    title = "Check for Updates",
+                                    description = "Download latest version from GitHub.",
+                                    icon = Icons.Filled.BrowserUpdated,
+                                    modifier = Modifier.weight(1f).height(cardHeight),
+                                    onClick = { onOpenUrl("https://github.com/Maheswara660/App-Dock/releases") }
+                                )
+                            }
                         }
 
                         Spacer(Modifier.height(32.dp))
@@ -1100,6 +993,7 @@ fun SettingsAboutScreen(onOpenUrl: (String) -> Unit, onBack: () -> Unit) {
                         // ── Privacy Manifesto ──────────────────────────────────────────────────
                         Surface(
                                 shape = RoundedCornerShape(20.dp),
+                                shadowElevation = 1.dp,
                                 color = adaptiveSurfaceVariantBackground(),
                                 modifier =
                                         Modifier.fillMaxWidth()
@@ -1172,7 +1066,7 @@ fun SettingsAboutScreen(onOpenUrl: (String) -> Unit, onBack: () -> Unit) {
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                                "© From App Dock Contributor. All rights reserved.",
+                                "© ${com.foss.appdock.shared.utils.Constants.DEVELOPER}. All rights reserved.",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.outline
                         )
@@ -1199,8 +1093,7 @@ private fun AboutActionCard(
                 shape = RoundedCornerShape(16.dp),
                 color = adaptiveSurfaceVariantBackground(),
                 modifier =
-                        modifier.fillMaxWidth()
-                                .border(
+                        modifier.border(
                                         1.dp,
                                         adaptiveSurfaceVariantBorder(),
                                         RoundedCornerShape(16.dp)

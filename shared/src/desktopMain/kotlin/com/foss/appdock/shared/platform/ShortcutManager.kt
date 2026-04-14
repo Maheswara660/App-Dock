@@ -11,11 +11,12 @@ class DesktopShortcutManager : ShortcutManager {
             return
         }
 
-        if (!osName.contains("nux") && !osName.contains("nix")) {
-            // Early return for macOS or other unsupported platforms
+        if (osName.contains("mac")) {
+            createMacOSShortcut(app)
             return
         }
 
+        // Linux/Other
         val userHome = System.getProperty("user.home") ?: return
         val applicationsDir = File(userHome, ".local/share/applications")
         if (!applicationsDir.exists()) applicationsDir.mkdirs()
@@ -89,8 +90,7 @@ class DesktopShortcutManager : ShortcutManager {
                             }
                     append(cmd)
                     
-                    // Improved Wayland support for Chromium browsers
-                    append(" --ozone-platform-hint=auto")
+                    append(" --no-first-run --no-default-browser-check --ozone-platform-hint=auto")
                     
                     if (app.isStandalone) append(" --app=\"${app.url}\"")
                     else append(" \"${app.url}\"")
@@ -141,30 +141,18 @@ class DesktopShortcutManager : ShortcutManager {
             val appId = "appdock_${app.name.replace(" ", "_").lowercase()}"
             val userHome = System.getProperty("user.home") ?: return
             
-            // 1. Determine paths
             val desktopDir = File(userHome, "Desktop")
             val startMenuDir = File(System.getenv("APPDATA"), "Microsoft\\Windows\\Start Menu\\Programs")
-            // No need to mkdirs if we use the root Programs folder, but safe to keep for consistency
             if (!startMenuDir.exists()) startMenuDir.mkdirs()
 
             val shortcutName = "${app.name}.lnk"
             val desktopShortcut = File(desktopDir, shortcutName)
             val startMenuShortcut = File(startMenuDir, shortcutName)
 
-            // 2. Determine executable and arguments
-            // We want to point to the App Dock executable if possible, to handle proxy launch,
-            // or point to the browser directly if we want standalone behavior.
-            // On Windows, pointing to the App Dock exe with a deep link is best for consistency.
-            
             val appData = System.getenv("LOCALAPPDATA") ?: (userHome + "\\AppData\\Local")
             val profileDir = File(appData, "AppDock\\Profiles\\$appId")
             if (app.isolatedProfile) profileDir.mkdirs()
 
-            // Find our own executable path
-            // When running as a packaged app, System.getProperty("compose.application.resources.dir") 
-            // is often near the exe. A better way for jpackage is to check the process path.
-            // For now, let's build the browser command directly as it's more reliable across environments.
-            
             val (targetPath, arguments) = run {
                 var browserName = app.browserChoice?.lowercase() ?: "system default"
                 var foundPath = ""
@@ -219,6 +207,7 @@ class DesktopShortcutManager : ShortcutManager {
                         } else if (browserName == "unknown") {
                             append("\"${app.url}\"")
                         } else {
+                            append("--no-first-run --no-default-browser-check ")
                             if (app.isStandalone) append("--app=\"${app.url}\" ")
                             else append("\"${app.url}\" ")
                             if (app.incognitoMode) {
@@ -234,7 +223,6 @@ class DesktopShortcutManager : ShortcutManager {
                 }
             }
 
-            // 3. Download icon locally
             var localIconPath = ""
             try {
                 if (!app.iconPath.isNullOrBlank()) {
@@ -251,45 +239,21 @@ class DesktopShortcutManager : ShortcutManager {
                     
                     if (pngBytes != null) {
                         val icoBytes = ByteArray(22 + pngBytes.size)
-                        // Reserved
-                        icoBytes[0] = 0
-                        icoBytes[1] = 0
-                        // Type (1 = ICO)
-                        icoBytes[2] = 1
-                        icoBytes[3] = 0
-                        // Number of images
-                        icoBytes[4] = 1
-                        icoBytes[5] = 0
-                        
-                        // width and height (0 means 256)
-                        icoBytes[6] = 0
-                        icoBytes[7] = 0
-                        // colors
-                        icoBytes[8] = 0
-                        // reserved
-                        icoBytes[9] = 0
-                        // color planes
-                        icoBytes[10] = 1
-                        icoBytes[11] = 0
-                        // Bits per pixel (32)
-                        icoBytes[12] = 32
-                        icoBytes[13] = 0
-                        
-                        // Size of image data
+                        icoBytes[0] = 0; icoBytes[1] = 0
+                        icoBytes[2] = 1; icoBytes[3] = 0
+                        icoBytes[4] = 1; icoBytes[5] = 0
+                        icoBytes[6] = 0; icoBytes[7] = 0
+                        icoBytes[8] = 0; icoBytes[9] = 0
+                        icoBytes[10] = 1; icoBytes[11] = 0
+                        icoBytes[12] = 32; icoBytes[13] = 0
                         val size = pngBytes.size
                         icoBytes[14] = (size and 0xFF).toByte()
                         icoBytes[15] = ((size shr 8) and 0xFF).toByte()
                         icoBytes[16] = ((size shr 16) and 0xFF).toByte()
                         icoBytes[17] = ((size shr 24) and 0xFF).toByte()
-                        
-                        // Offset of image data (22)
-                        icoBytes[18] = 22
-                        icoBytes[19] = 0
-                        icoBytes[20] = 0
-                        icoBytes[21] = 0
-                        
+                        icoBytes[18] = 22; icoBytes[19] = 0
+                        icoBytes[20] = 0; icoBytes[21] = 0
                         System.arraycopy(pngBytes, 0, icoBytes, 22, pngBytes.size)
-                        
                         iconFile.writeBytes(icoBytes)
                         localIconPath = iconFile.absolutePath
                     }
@@ -298,12 +262,8 @@ class DesktopShortcutManager : ShortcutManager {
                 e.printStackTrace()
             }
 
-            // 4. Create shortcuts using PowerShell
-            val iconPath = localIconPath 
-            
             val psScript = """
                 ${'$'}WshShell = New-Object -ComObject WScript.Shell
-                
                 function Create-Shortcut {
                     param([string]${'$'}path, [string]${'$'}target, [string]${'$'}shortcutArgs, [string]${'$'}icon, [string]${'$'}aumid)
                     ${'$'}Shortcut = ${'$'}WshShell.CreateShortcut(${'$'}path)
@@ -313,7 +273,6 @@ class DesktopShortcutManager : ShortcutManager {
                         ${'$'}Shortcut.IconLocation = ${'$'}icon + ",0"
                     }
                     ${'$'}Shortcut.Save()
-                    
                     try {
                         ${'$'}code = @"
                         using System;
@@ -362,19 +321,259 @@ class DesktopShortcutManager : ShortcutManager {
                         [ShortcutHelper]::SetAppId(${'$'}path, ${'$'}aumid)
                     } catch {}
                 }
-
-                Create-Shortcut -path '${desktopShortcut.absolutePath.replace("'", "''")}' -target '${targetPath.replace("'", "''")}' -shortcutArgs '${arguments.replace("'", "''")}' -icon '${iconPath.replace("'", "''")}' -aumid '$appId'
-                Create-Shortcut -path '${startMenuShortcut.absolutePath.replace("'", "''")}' -target '${targetPath.replace("'", "''")}' -shortcutArgs '${arguments.replace("'", "''")}' -icon '${iconPath.replace("'", "''")}' -aumid '$appId'
+                Create-Shortcut -path '${desktopShortcut.absolutePath.replace("'", "''")}' -target '${targetPath.replace("'", "''")}' -shortcutArgs '${arguments.replace("'", "''")}' -icon '${localIconPath.replace("'", "''")}' -aumid '$appId'
+                Create-Shortcut -path '${startMenuShortcut.absolutePath.replace("'", "''")}' -target '${targetPath.replace("'", "''")}' -shortcutArgs '${arguments.replace("'", "''")}' -icon '${localIconPath.replace("'", "''")}' -aumid '$appId'
             """.trimIndent()
 
             val tempPs1 = File.createTempFile("create_shortcut", ".ps1")
             tempPs1.writeText(psScript)
-            
             Runtime.getRuntime().exec(arrayOf("powershell.exe", "-ExecutionPolicy", "Bypass", "-File", tempPs1.absolutePath)).waitFor()
             tempPs1.delete()
-
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    private fun createMacOSShortcut(app: WebApp) {
+        try {
+            val appId = "com.foss.appdock.app_${app.name.replace(" ", "_").lowercase()}"
+            val userHome = System.getProperty("user.home") ?: return
+            
+            val appBundleName = "${app.name}.app"
+            val applicationsDir = File(userHome, "Applications")
+            if (!applicationsDir.exists()) applicationsDir.mkdirs()
+            
+            val appBundleDir = File(applicationsDir, appBundleName)
+            if (appBundleDir.exists()) appBundleDir.deleteRecursively()
+            
+            val contentsDir = File(appBundleDir, "Contents")
+            val macOsDir = File(contentsDir, "MacOS")
+            val resourcesDir = File(contentsDir, "Resources")
+            
+            macOsDir.mkdirs()
+            resourcesDir.mkdirs()
+            File(contentsDir, "PkgInfo").writeText("APPL????")
+
+            val profileDir = File(userHome, "Library/Application Support/AppDock/Profiles/$appId")
+            if (app.isolatedProfile && !profileDir.exists()) profileDir.mkdirs()
+
+            val browserLower = app.browserChoice?.lowercase() ?: ""
+            val browserArgs = mutableListOf<String>()
+            when {
+                browserLower.contains("chrome") || browserLower.contains("brave") || browserLower.contains("edge") -> {
+                    browserArgs.add("--no-first-run")
+                    browserArgs.add("--no-default-browser-check")
+                    if (app.incognitoMode) browserArgs.add("--incognito")
+                    if (app.isolatedProfile) {
+                        ensureChromiumProfileInitialized(profileDir)
+                        browserArgs.add("--user-data-dir=${profileDir.absolutePath}")
+                    }
+                    if (app.isStandalone) browserArgs.add("--app=${app.url}")
+                    else browserArgs.add(app.url)
+                }
+                browserLower.contains("firefox") -> {
+                    if (app.incognitoMode) browserArgs.add("-private-window")
+                    if (app.isolatedProfile) {
+                        profileDir.mkdirs()
+                        browserArgs.add("-profile")
+                        browserArgs.add(profileDir.absolutePath)
+                    }
+                    browserArgs.add(app.url)
+                }
+                else -> browserArgs.add(app.url)
+            }
+
+            val browserApp = when {
+                app.browserChoice?.lowercase()?.contains("chrome") == true -> "Google Chrome"
+                app.browserChoice?.lowercase()?.contains("brave") == true -> "Brave Browser"
+                app.browserChoice?.lowercase()?.contains("edge") == true -> "Microsoft Edge"
+                app.browserChoice?.lowercase()?.contains("firefox") == true -> "Firefox"
+                else -> app.browserChoice ?: "Safari"
+            }
+
+            fun findMacBinary(appName: String): String {
+                val appDirs = listOf("/Applications", (System.getProperty("user.home") ?: "") + "/Applications")
+                for (dir in appDirs) {
+                    val bundle = File(dir, "$appName.app")
+                    if (bundle.exists()) {
+                        val innerMacOsDir = File(bundle, "Contents/MacOS")
+                        if (innerMacOsDir.exists() && innerMacOsDir.isDirectory) {
+                            val binary = File(innerMacOsDir, appName)
+                            if (binary.exists()) return binary.absolutePath
+                            val files = innerMacOsDir.listFiles()
+                            if (!files.isNullOrEmpty()) return files[0].absolutePath
+                        }
+                    }
+                }
+                return "/Applications/$appName.app/Contents/MacOS/$appName" // Fallback
+            }
+
+            val browserBinaryPath = when {
+                browserApp == "Google Chrome" -> "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+                browserApp == "Brave Browser" -> "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+                browserApp == "Microsoft Edge" -> "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"
+                browserApp == "Firefox" -> "/Applications/Firefox.app/Contents/MacOS/firefox"
+                browserApp == "Safari" -> "/Applications/Safari.app/Contents/MacOS/Safari"
+                else -> findMacBinary(browserApp)
+            }
+
+            val safeUrl = shellSingleQuote(app.url)
+            val scriptArgLines = browserArgs.joinToString("\n") { "  ${shellSingleQuote(it)}" }
+
+            val launcherScript = File(macOsDir, app.name)
+            val scriptContent = "#!/bin/bash\n" + """
+                if [ "$browserApp" = "Safari" ]; then
+                    open -a "Safari" $safeUrl
+                    exit 0
+                fi
+                
+                BROWSER_ARGS=(
+$scriptArgLines
+                )
+                
+                # Check if the app is already running with this profile
+                if ps aux | grep -v grep | grep -q "${profileDir.absolutePath}"; then
+                    # Already running: Just bring the browser to the front
+                    open -a "$browserApp"
+                    exit 0
+                fi
+
+                # Not running: Launch new instance
+                if [ -f "$browserBinaryPath" ]; then
+                    # Direct execution is more reliable for passing --app and other Chromium flags
+                    # Use nohup and & to allow the launcher script to exit while the browser stays open
+                    nohup "$browserBinaryPath" "${'$'}{BROWSER_ARGS[@]}" > /dev/null 2>&1 &
+                else
+                    # Fallback if binary path is missing
+                    open -a "$browserApp" --args "${'$'}{BROWSER_ARGS[@]}"
+                fi
+            """.trimIndent()
+            launcherScript.writeText(scriptContent)
+            launcherScript.setExecutable(true)
+
+            var iconName = "app.icns"
+            if (!app.iconPath.isNullOrBlank()) {
+                generateMacIcon(app.iconPath, File(resourcesDir, iconName))
+            }
+
+            val infoPlist = File(contentsDir, "Info.plist")
+            val plistContent = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+                <plist version="1.0">
+                <dict>
+                    <key>CFBundleDevelopmentRegion</key>
+                    <string>en</string>
+                    <key>CFBundleExecutable</key>
+                    <string>${app.name}</string>
+                    <key>CFBundleIconFile</key>
+                    <string>$iconName</string>
+                    <key>CFBundleIdentifier</key>
+                    <string>$appId</string>
+                    <key>CFBundleInfoDictionaryVersion</key>
+                    <string>6.0</string>
+                    <key>CFBundleName</key>
+                    <string>${app.name}</string>
+                    <key>CFBundlePackageType</key>
+                    <string>APPL</string>
+                    <key>CFBundleSignature</key>
+                    <string>????</string>
+                    <key>CFBundleShortVersionString</key>
+                    <string>1.0</string>
+                    <key>CFBundleVersion</key>
+                    <string>1.0</string>
+                    <key>LSMinimumSystemVersion</key>
+                    <string>12.0</string>
+                    <key>NSHighResolutionCapable</key>
+                    <true/>
+                    <key>NSAppleScriptEnabled</key>
+                    <true/>
+                    <key>LSEnvironment</key>
+                    <dict>
+                        <key>MallocNanoZone</key>
+                        <string>0</string>
+                    </dict>
+                    <key>LSArchitecturePriority</key>
+                    <array>
+                        <string>arm64</string>
+                        <string>x86_64</string>
+                    </array>
+                    <key>CFBundleSupportedPlatforms</key>
+                    <array>
+                        <string>MacOSX</string>
+                    </array>
+                </dict>
+                </plist>
+            """.trimIndent()
+            infoPlist.writeText(plistContent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun generateMacIcon(sourcePath: String, targetFile: File) {
+        try {
+            val bytes = if (sourcePath.startsWith("http")) {
+                java.net.URL(sourcePath).readBytes()
+            } else {
+                val source = File(sourcePath)
+                if (source.exists()) source.readBytes() else null
+            } ?: return
+
+            val tempPng = File.createTempFile("app_icon", ".png")
+            tempPng.writeBytes(bytes)
+
+            val iconsetDir = File(tempPng.parentFile, "icon.iconset")
+            iconsetDir.mkdirs()
+
+            val sizes = listOf(16, 32, 128, 256, 512)
+            for (size in sizes) {
+                Runtime.getRuntime().exec(arrayOf("sips", "-z", "$size", "$size", tempPng.absolutePath, "--out", "${iconsetDir.absolutePath}/icon_${size}x${size}.png")).waitFor()
+                val doubleSize = size * 2
+                if (doubleSize <= 1024) {
+                    Runtime.getRuntime().exec(arrayOf("sips", "-z", "$doubleSize", "$doubleSize", tempPng.absolutePath, "--out", "${iconsetDir.absolutePath}/icon_${size}x${size}@2x.png")).waitFor()
+                }
+            }
+            Runtime.getRuntime().exec(arrayOf("iconutil", "-c", "icns", iconsetDir.absolutePath, "-o", targetFile.absolutePath)).waitFor()
+            tempPng.delete()
+            iconsetDir.deleteRecursively()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun ensureChromiumProfileInitialized(profileDir: File) {
+        profileDir.mkdirs()
+        val firstRunMarker = File(profileDir, "First Run")
+        if (!firstRunMarker.exists()) {
+            try {
+                firstRunMarker.createNewFile()
+            } catch (_: Exception) {}
+        }
+    }
+
+    private fun shellSingleQuote(value: String): String {
+        return "'" + value.replace("'", "'\"'\"'") + "'"
+    }
+
+    private fun getDefaultWindowsBrowserPath(): String? {
+        return try {
+            val process = Runtime.getRuntime().exec(arrayOf("reg", "query", "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations\\https\\UserChoice", "/v", "ProgId"))
+            val output = process.inputStream.bufferedReader().readText()
+            val progId = output.split("REG_SZ").last().trim()
+            
+            val shellCommandProcess = Runtime.getRuntime().exec(arrayOf("reg", "query", "HKEY_CLASSES_ROOT\\$progId\\shell\\open\\command", "/ve"))
+            val shellOutput = shellCommandProcess.inputStream.bufferedReader().readText()
+            val fullCommand = shellOutput.split("REG_SZ").last().trim()
+            
+            // Extract path from "path\to\browser.exe" %1
+            if (fullCommand.startsWith("\"")) {
+                fullCommand.substring(1).split("\"").first()
+            } else {
+                fullCommand.split(" ").first()
+            }
+        } catch (e: Exception) {
+            null
         }
     }
 
@@ -418,7 +617,17 @@ class DesktopShortcutManager : ShortcutManager {
 
         if (osName.contains("mac")) {
             val userHome = System.getProperty("user.home") ?: return
-            val profileDir = File(userHome, "Library/Application Support/AppDock/Profiles/$appId")
+            
+            // Delete actual App bundle
+            val applicationsDir = File(userHome, "Applications")
+            val appBundleDir = File(applicationsDir, "${app.name}.app")
+            if (appBundleDir.exists()) {
+                appBundleDir.deleteRecursively()
+            }
+            
+            // Cleanup profile
+            val appInstanceId = "com.foss.appdock.app_${app.name.replace(" ", "_").lowercase()}"
+            val profileDir = File(userHome, "Library/Application Support/AppDock/Profiles/$appInstanceId")
             if (profileDir.exists()) {
                 profileDir.deleteRecursively()
             }

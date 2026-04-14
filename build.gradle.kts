@@ -45,6 +45,10 @@ subprojects {
             force("io.ktor:ktor-utils-jvm:2.3.8")
             force("io.ktor:ktor-io:2.3.8")
             force("io.ktor:ktor-io-jvm:2.3.8")
+
+            // Force reliable JOGL versions for Compose Desktop rendering
+            force("org.jogamp.jogl:jogl-all:2.5.0")
+            force("org.jogamp.gluegen:gluegen-rt:2.5.0")
         }
     }
 }

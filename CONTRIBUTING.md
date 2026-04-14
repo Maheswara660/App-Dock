@@ -1,30 +1,30 @@
 # Contributing to App-Dock
 
-First off, thank you for considering contributing to App-Dock! It's people like you that make it a great tool.
+> [!CAUTION]
+> **Project Status: Sunset Phase**
+> 
+> As of April 15, 2026, **App-Dock** is in a maintenance-only sunset phase and will no longer be actively accepting new feature requests or major enhancements. Pull Requests for critical bug fixes or documentation improvements are still welcome, but for any significant new development, please feel free to **fork the repository**.
 
 ## How Can I Contribute?
 
 ### Reporting Bugs
-- Use the project's issue tracker.
+- Use the project's issue tracker to report critical bugs.
 - Describe the bug and steps to reproduce.
 - Mention your platform (Android, Linux, Windows, macOS).
 
-### Suggesting Enhancements
-- If you have an idea, feel free to open a discussion or a feature request.
-- Be specific about why the feature would be useful.
-
 ### Pull Requests
-- Fork the repository.
-- Create a new branch for your feature or fix.
-- Ensure your code follows the existing style and is well-themed (Liquid Glass).
-- Submit a clear PR description.
+- Since the project is in sunset, we primarily accept PRs for:
+  - Critical security or stability fixes.
+  - Documentation and README improvements.
+  - Community-tested compatibility fixes for OS updates.
+- **For New Features**: Please fork the repository and develop your enhancements in your own version.
 
 ## Development Setup
 
 App-Dock is a Kotlin Multiplatform project.
-- **Android**: Requires Android Studio and JDK 17+.
-- **Desktop**: Requires Compose for Desktop setup.
-- **Runtime**: For PHP testing, ensure you have a local PHP binary reachable or use the internal Android engine.
+- **JDK Requirement**: This project requires **JDK 21** or later.
+- **Android**: Requires Android Studio.
+- **Desktop**: Requires Compose for Desktop setup (JVM 21).
 
 ## Style Guidelines
 - Use **Liquid Glass** modifiers for all UI surfaces.

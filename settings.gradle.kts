@@ -1,10 +1,10 @@
 pluginManagement {
     repositories {
+        maven("https://www.jogamp.org/deployment/maven/")
         gradlePluginPortal()
         mavenCentral()
         google()
         maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
-        maven("https://www.jogamp.org/deployment/maven/")
         maven("https://www.jcenter.bintray.com") // Fallback for legacy artifacts
     }
 
@@ -30,10 +30,10 @@ include(":desktopApp")
 
 dependencyResolutionManagement {
     repositories {
+        maven("https://www.jogamp.org/deployment/maven/")
         google()
         mavenCentral()
         maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
-        maven("https://www.jogamp.org/deployment/maven/")
         maven("https://www.jcenter.bintray.com") // Fallback for legacy artifacts
     }
 }

@@ -27,7 +27,7 @@ android {
         minSdk = (findProperty("android.minSdk") as String).toInt()
         targetSdk = (findProperty("android.targetSdk") as String).toInt()
         versionCode = 1
-        versionName = "2.0.0"
+        versionName = "1.2.0"
     }
 
     signingConfigs {
